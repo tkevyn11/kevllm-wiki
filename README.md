@@ -2,9 +2,13 @@
 
 LLM-Wiki is a local-first, CLI-first personal knowledge library that keeps markdown files as the long-term source of truth. Phase 1 focuses on a narrow, practical workflow: initialize a library, ingest materials, create and maintain structured notes, and query the wiki from the terminal without introducing heavy infrastructure.
 
+Karpathy-style layering is explicitly supported: `raw/` + `wiki/` + `schema/`.
+
+LLM maintainer rules are provided via `CLAUDE.md` (root) and `schema/CLAUDE.md`.
+
 ## Phase 1 Scope
 
-- Markdown and filesystem are canonical (`raw/`, `wiki/`, `work/`, `docs/`).
+- Markdown and filesystem are canonical (`raw/`, `wiki/`, `schema/`, with `work/` for operational artifacts).
 - CLI is the primary interface (`llm-wiki`).
 - Search is local keyword search over markdown notes.
 - Notes use markdown plus YAML frontmatter.
@@ -18,7 +22,7 @@ LLM-Wiki is a local-first, CLI-first personal knowledge library that keeps markd
 
 ## Phase 2 Boundary
 
-Phase 2 is intentionally separate and deferred. A future GBrain-inspired intelligence layer may be added on top of the Phase 1 markdown corpus, but it does not replace markdown files as source of truth.
+Phase 2 is intentionally separate and deferred. A future GBrain-inspired intelligence layer may be added on top of the Phase 1 markdown corpus, but it does not replace markdown files as source of truth. Candidate external tools to evaluate in Phase 2 (for example [Graphify](https://github.com/safishamsi/graphify), [Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract)) are noted in [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md), not used in Phase 1.
 
 See [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md).
 
@@ -26,6 +30,7 @@ See [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md).
 
 - `raw/`: original source materials.
 - `wiki/`: structured markdown knowledge base.
+- `schema/`: workflow conventions and note schema contract.
 - `work/`: temporary processing files and manifests.
 - `docs/`: product, architecture, and specification documents.
 
@@ -69,6 +74,8 @@ After CLI implementation lands, the expected flow is:
 - MVP boundaries: [docs/MVP_SCOPE.md](docs/MVP_SCOPE.md)
 - Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Tech choices: [docs/TECH_STACK.md](docs/TECH_STACK.md)
+- Quick reference: [docs/QUICKSTART.md](docs/QUICKSTART.md)
+- User manual: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 - CLI contract: [docs/CLI_SPEC.md](docs/CLI_SPEC.md)
 - Note schema: [docs/NOTE_SCHEMA.md](docs/NOTE_SCHEMA.md)
 - Ingest flow: [docs/INGEST_WORKFLOW.md](docs/INGEST_WORKFLOW.md)

@@ -14,7 +14,7 @@ def test_cli_exposes_expected_command_set() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0, result.stdout
     help_text = result.stdout
-    for cmd in ["init", "ingest", "list", "search", "open", "summarize", "link", "check"]:
+    for cmd in ["init", "ingest", "list", "search", "open", "summarize", "link", "check", "query", "lint"]:
         assert cmd in help_text
 
 

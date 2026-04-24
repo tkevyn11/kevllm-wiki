@@ -16,6 +16,8 @@ Define a predictable, local ingest process that transforms raw materials into st
 
 1. **Acquire source**
    - User provides file path, directory path, or URL metadata.
+   - For PDF-heavy workflows, keep originals under `raw/original/`.
+   - Optionally preprocess PDFs into markdown/text and save outputs under `raw/processed/`.
 2. **Register ingest**
    - CLI appends entry to `work/ingest-manifest.jsonl`.
    - Manifest captures timestamp, input reference, and status.
@@ -26,11 +28,39 @@ Define a predictable, local ingest process that transforms raw materials into st
 4. **Note creation/update**
    - Create new note or update existing note in `wiki/`.
    - Ensure required frontmatter fields and source attribution are present.
+   - Default ingest writes a `## Summary` section (`--summarize`).
+   - You can disable this with `--no-summarize`.
 5. **Index and log updates**
    - `wiki/index.md` is updated with note reference.
    - `wiki/log.md` appends ingest event summary.
-6. **Validation**
+6. **Optional relationship pass**
+   - With `--link-suggestions`, ingest proposes and writes related-note links.
+   - With `--touch-related`, ingest also refreshes summaries for newly linked notes.
+7. **Validation**
    - Run schema and link checks (implicitly or via explicit `llm-wiki check`).
+
+## Ingest Modes and When to Use Them
+
+- `llm-wiki ingest <input>`
+  - Use for normal day-to-day ingest.
+- `llm-wiki ingest <input> --link-suggestions`
+  - Use when new sources are likely related to existing notes.
+- `llm-wiki ingest <input> --link-suggestions --touch-related`
+  - Use when you want immediate refresh of linked notes after ingest.
+- `llm-wiki ingest <input> --no-summarize`
+  - Use when source extraction quality is low and you prefer manual summary editing.
+
+## Recommended PDF Preprocessing Pattern (Optional)
+
+For better search quality on PDF/doc-based workflows:
+
+1. Keep original files in `raw/original/`.
+2. Use an external parser (for example, `opendataloader-pdf`) to extract text/markdown.
+3. Save extracted outputs in `raw/processed/`.
+4. Ingest the processed text/markdown with `llm-wiki ingest`.
+5. Keep source attribution pointing to both original and processed artifacts when possible.
+
+This keeps Phase 1 architecture unchanged while improving retrieval quality.
 
 ## Idempotence Policy
 

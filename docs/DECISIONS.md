@@ -89,3 +89,11 @@ This file records high-impact decisions for Phase 1 with context and trade-offs.
 - **Consequences**:
   - Better day-to-day ergonomics for capture, browsing, and presentation.
   - Core CLI remains independent from any specific UI or plugin ecosystem.
+
+## D-012: Phase 2 evaluation candidates (Graphify, Hyper-Extract)
+
+- **Context**: Richer extraction and graph-style tooling may be useful after Phase 1 is stable.
+- **Decision**: Treat [Graphify](https://github.com/safishamsi/graphify) and [Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract) as **Phase 2 evaluation candidates only**; document them in [FUTURE_PHASE_2.md](FUTURE_PHASE_2.md) and do not integrate them into Phase 1 core.
+- **Consequences**:
+  - Clear boundary: Phase 1 stays filesystem + CLI + keyword search.
+  - Future work has named options without committing to either tool or architecture.

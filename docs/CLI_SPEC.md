@@ -43,7 +43,7 @@ Ingest source materials and produce/update structured notes.
 
 ### Usage
 
-`llm-wiki ingest <input> [--library PATH] [--type TYPE] [--title TITLE] [--id NOTE_ID]`
+`llm-wiki ingest <input> [--library PATH] [--type TYPE] [--title TITLE] [--id NOTE_ID] [--summarize/--no-summarize] [--link-suggestions] [--touch-related]`
 
 ### Arguments
 
@@ -55,6 +55,10 @@ Ingest source materials and produce/update structured notes.
 - Copies or references sources under `raw/` according to ingest policy.
 - Creates or updates markdown notes in `wiki/`.
 - Adds source attribution metadata in note frontmatter.
+- `--summarize` (default) writes a `## Summary` section during ingest.
+- `--no-summarize` skips automatic summary generation.
+- `--link-suggestions` adds related-note links based on keyword overlap.
+- `--touch-related` refreshes summaries/index entries for related notes linked in the same ingest pass.
 
 ## Command: `list`
 
@@ -107,13 +111,14 @@ Summarize a note or source.
 
 ### Usage
 
-`llm-wiki summarize <id-or-path> [--library PATH] [--mode local|llm]`
+`llm-wiki summarize <id-or-path> [--library PATH] [--mode local|llm] [--write]`
 
 ### Behavior
 
 - `local` mode (default): deterministic heuristic summary.
 - `llm` mode: optional adapter if configured.
 - Does not require cloud services for default mode.
+- `--write`: writes/updates a `## Summary` section in the note and refreshes index/log metadata.
 
 ## Command: `link`
 
@@ -144,3 +149,31 @@ Validate library consistency.
 - Checks broken internal links.
 - Checks source attribution shape.
 - Returns exit code `3` on validation failures.
+
+## Command: `query`
+
+Ask a question against the wiki and synthesize a citation-backed answer.
+
+### Usage
+
+`llm-wiki query "<question>" [--library PATH] [--top-k N] [--save]`
+
+### Behavior
+
+- Retrieves top matching notes from local wiki content.
+- Produces a synthesized answer with source citations.
+- `--save` writes the answer back into `wiki/` as a `query-*` note.
+
+## Command: `lint`
+
+Run a health-check pass inspired by Karpathy-style wiki maintenance.
+
+### Usage
+
+`llm-wiki lint [--library PATH] [--strict]`
+
+### Behavior
+
+- Runs structural checks (same baseline as `check`).
+- Adds health warnings (for example orphan notes and notes missing summary sections).
+- Intended for periodic maintenance passes, not just schema validation.

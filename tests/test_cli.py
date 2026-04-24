@@ -17,8 +17,11 @@ def test_init_creates_structure() -> None:
         assert Path("wiki").exists()
         assert Path("work").exists()
         assert Path("docs").exists()
+        assert Path("schema").exists()
         assert Path("wiki/index.md").exists()
         assert Path("wiki/log.md").exists()
+        assert Path("schema/SCHEMA.md").exists()
+        assert Path("schema/CLAUDE.md").exists()
 
 
 def test_init_is_idempotent() -> None:
@@ -38,6 +41,10 @@ def test_ingest_list_search_and_check_pass() -> None:
         ingest = runner.invoke(app, ["ingest", "sample.md", "-C", "."])
         assert ingest.exit_code == 0, ingest.stdout
         assert Path("work/ingest-manifest.jsonl").exists()
+        note_text = Path("wiki/sample.md").read_text(encoding="utf-8")
+        assert "## Summary" in note_text
+        index_text = Path("wiki/index.md").read_text(encoding="utf-8")
+        assert "(sample.md)" in index_text
 
         listed = runner.invoke(app, ["list", "-C", "."])
         assert listed.exit_code == 0, listed.stdout
@@ -144,6 +151,11 @@ def test_summarize_local_and_nonlocal_modes() -> None:
         local = runner.invoke(app, ["summarize", "a", "-C", "."])
         assert local.exit_code == 0, local.stdout
         assert "summary for a" in local.stdout.lower()
+        local_write = runner.invoke(app, ["summarize", "a", "-C", ".", "--write"])
+        assert local_write.exit_code == 0, local_write.stdout
+        assert "updated note summary" in local_write.stdout.lower()
+        body = Path("wiki/a.md").read_text(encoding="utf-8")
+        assert "## Summary" in body
 
         nonlocal_mode = runner.invoke(app, ["summarize", "a", "-C", ".", "--mode", "llm"])
         assert nonlocal_mode.exit_code == 2
@@ -202,3 +214,60 @@ def test_open_missing_note_returns_not_found_exit_code() -> None:
         result = runner.invoke(app, ["open", "missing-note", "-C", "."])
         assert result.exit_code == 4
         assert "target not found" in result.stdout.lower()
+
+
+def test_query_can_save_query_note() -> None:
+    with runner.isolated_filesystem():
+        assert runner.invoke(app, ["init", "-C", "."]).exit_code == 0
+        Path("sample.md").write_text("# Sample\n\nRupture risk includes aneurysm size and location.\n", encoding="utf-8")
+        assert runner.invoke(app, ["ingest", "sample.md", "-C", "."]).exit_code == 0
+
+        result = runner.invoke(app, ["query", "rupture risk", "-C", ".", "--save"])
+        assert result.exit_code == 0, result.stdout
+        assert "## Answer" in result.stdout
+        saved = [p for p in Path("wiki").glob("query-*.md")]
+        assert saved
+
+
+def test_lint_reports_warnings_for_orphan_notes() -> None:
+    with runner.isolated_filesystem():
+        assert runner.invoke(app, ["init", "-C", "."]).exit_code == 0
+        _write_note(Path("wiki/a.md"), "a", "A")
+        result = runner.invoke(app, ["lint", "-C", "."])
+        assert result.exit_code == 0, result.stdout
+        assert "lint warnings" in result.stdout.lower()
+
+
+def test_ingest_no_summarize_skips_summary_section() -> None:
+    with runner.isolated_filesystem():
+        Path("sample.md").write_text("# Sample\n\nAlpha beta gamma.\n", encoding="utf-8")
+        assert runner.invoke(app, ["init", "-C", "."]).exit_code == 0
+        result = runner.invoke(app, ["ingest", "sample.md", "-C", ".", "--no-summarize"])
+        assert result.exit_code == 0, result.stdout
+        text = Path("wiki/sample.md").read_text(encoding="utf-8")
+        assert "## Summary" not in text
+
+
+def test_ingest_link_suggestions_links_related_notes() -> None:
+    with runner.isolated_filesystem():
+        assert runner.invoke(app, ["init", "-C", "."]).exit_code == 0
+        Path("a.md").write_text("Aneurysm rupture risk score baseline factors include location and size.", encoding="utf-8")
+        Path("b.md").write_text("Rupture risk factors for aneurysm include size and location metrics.", encoding="utf-8")
+        assert runner.invoke(app, ["ingest", "a.md", "-C", "."]).exit_code == 0
+        result = runner.invoke(app, ["ingest", "b.md", "-C", ".", "--link-suggestions"])
+        assert result.exit_code == 0, result.stdout
+        a = Path("wiki/a.md").read_text(encoding="utf-8")
+        b = Path("wiki/b.md").read_text(encoding="utf-8")
+        assert "related:\n- b" in a or "related:\n- a" in b
+
+
+def test_ingest_touch_related_refreshes_linked_note_summary() -> None:
+    with runner.isolated_filesystem():
+        assert runner.invoke(app, ["init", "-C", "."]).exit_code == 0
+        Path("a.md").write_text("Aneurysm rupture risk size location.", encoding="utf-8")
+        Path("b.md").write_text("Rupture risk factors include aneurysm size and location.", encoding="utf-8")
+        assert runner.invoke(app, ["ingest", "a.md", "-C", "."]).exit_code == 0
+        first_b = runner.invoke(app, ["ingest", "b.md", "-C", ".", "--link-suggestions", "--touch-related"])
+        assert first_b.exit_code == 0, first_b.stdout
+        a_text = Path("wiki/a.md").read_text(encoding="utf-8")
+        assert "## Summary" in a_text

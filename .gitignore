@@ -16,3 +16,19 @@ dist/
 .venv/
 venv/
 env/
+
+# Graphify derived outputs (run from work/ → work/graphify-out/)
+work/graphify-out/
+# Accidental run from repo root
+/graphify-out/
+graphify-out/
+
+# Graphify skill temp files (if created at repo root)
+.graphify_detect.json
+.graphify_ast.json
+.graphify_old.json
+
+# Private library content (local only — do not push notes/sources/manifests)
+/raw/
+/wiki/
+/work/

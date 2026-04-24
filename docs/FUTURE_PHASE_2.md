@@ -30,6 +30,21 @@ Phase 2 does not replace or hide `wiki/` as canonical storage.
 
 These are future directions, not implementation commitments for Phase 1.
 
+## Optional external tooling (Phase 2 evaluation)
+
+When planning Phase 2, consider evaluating third-party tools **only as optional layers** on top of the markdown corpus. They are not part of Phase 1 and are listed here as reminders to revisit during intelligence-layer design.
+
+| Tool | Reference | Why revisit in Phase 2 |
+|------|-----------|-------------------------|
+| **Graphify** | [safishamsi/graphify](https://github.com/safishamsi/graphify) | Turns folders of docs/code into a queryable knowledge graph and reports; relevant if you want graph-assisted navigation or retrieval beyond flat keyword search. |
+| **Hyper-Extract** | [yifanfeng97/Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract) | LLM-oriented structured extraction (including graph/hypergraph-style outputs); relevant if you want richer entity and relation extraction from unstructured text, subject to cost, privacy, and maintenance trade-offs. |
+
+Integration principles:
+
+- Phase 1 `wiki/` markdown remains canonical; any graph or extracted structure is derived and rebuildable.
+- Prefer opt-in pipelines and explicit exports (for example into `work/` or a dedicated Phase 2 cache) rather than silent mutation of notes.
+- Compare against lighter options (manual frontmatter, `check`, optional PDF preprocessors) before committing to heavy extraction stacks.
+
 ## Memory Lifecycle Extension (Candidate)
 
 The memory-focused extension is a valid next step after Phase 1, but it should be implemented as an additive layer, not as a replacement for the markdown wiki model.

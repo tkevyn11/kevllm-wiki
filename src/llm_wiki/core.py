@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,7 @@ RAW_DIR = "raw"
 WIKI_DIR = "wiki"
 WORK_DIR = "work"
 DOCS_DIR = "docs"
+SCHEMA_DIR = "schema"
 INDEX_FILE = "index.md"
 LOG_FILE = "log.md"
 MANIFEST_FILE = "ingest-manifest.jsonl"
@@ -88,7 +90,7 @@ def resolve_note(root: Path, id_or_path: str) -> Note | None:
 
 
 def ensure_structure(root: Path) -> None:
-    for name in [RAW_DIR, WIKI_DIR, WORK_DIR, DOCS_DIR]:
+    for name in [RAW_DIR, WIKI_DIR, WORK_DIR, DOCS_DIR, SCHEMA_DIR]:
         (root / name).mkdir(parents=True, exist_ok=True)
     index = root / WIKI_DIR / INDEX_FILE
     if not index.exists():
@@ -96,6 +98,24 @@ def ensure_structure(root: Path) -> None:
     log = root / WIKI_DIR / LOG_FILE
     if not log.exists():
         log.write_text("# Log\n\n", encoding="utf-8")
+    schema_file = root / SCHEMA_DIR / "SCHEMA.md"
+    if not schema_file.exists():
+        schema_file.write_text(
+            "# LLM-Wiki Schema\n\nDefines ingest/query/lint conventions for this library.\n",
+            encoding="utf-8",
+        )
+    claude_schema = root / SCHEMA_DIR / "CLAUDE.md"
+    if not claude_schema.exists():
+        claude_schema.write_text(
+            (
+                "# LLM Wiki\n\n"
+                "Maintainer contract for Karpathy-style wiki operations.\n\n"
+                "- Keep raw immutable.\n"
+                "- Keep wiki as canonical markdown knowledge base.\n"
+                "- Keep index/log updated after wiki changes.\n"
+            ),
+            encoding="utf-8",
+        )
 
 
 def append_log(root: Path, kind: str, message: str) -> None:
@@ -106,8 +126,36 @@ def append_log(root: Path, kind: str, message: str) -> None:
 
 
 def maybe_read_text(path: Path, max_chars: int = 4000) -> str:
-    if path.suffix.lower() not in {".md", ".txt", ".rst", ".py", ".json", ".yaml", ".yml"}:
-        return ""
+    suffix = path.suffix.lower()
+    if suffix in {".md", ".txt", ".rst", ".py", ".json", ".yaml", ".yml"}:
+        try:
+            return path.read_text(encoding="utf-8", errors="ignore")[:max_chars]
+        except OSError:
+            return ""
+    if suffix == ".pdf":
+        try:
+            from pypdf import PdfReader  # type: ignore
+
+            # Malformed xrefs in real-world PDFs spam stderr; pypdf still reads text.
+            logging.getLogger("pypdf").setLevel(logging.ERROR)
+            reader = PdfReader(str(path))
+            chunks: list[str] = []
+            for page in reader.pages[:20]:
+                chunks.append((page.extract_text() or "").strip())
+                if sum(len(c) for c in chunks) >= max_chars:
+                    break
+            return "\n".join(c for c in chunks if c)[:max_chars]
+        except Exception:
+            return ""
+    if suffix == ".docx":
+        try:
+            from docx import Document  # type: ignore
+
+            doc = Document(str(path))
+            txt = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+            return txt[:max_chars]
+        except Exception:
+            return ""
     try:
         return path.read_text(encoding="utf-8", errors="ignore")[:max_chars]
     except OSError:

@@ -14,11 +14,13 @@ flowchart LR
   user[User]
   cli[llm_wiki_CLI]
   raw[raw_dir]
+  schema[schema_dir]
   work[work_dir]
   wiki[wiki_dir]
   llm[Optional_LLM]
   user --> cli
   cli --> raw
+  cli --> schema
   cli --> work
   cli --> wiki
   cli -.->|"optional_summarize"| llm
@@ -28,6 +30,7 @@ flowchart LR
 
 - `wiki/` markdown files are the canonical knowledge base.
 - `raw/` stores original source materials and is not rewritten by processing commands.
+- `schema/` stores workflow conventions and schema-layer rules for the CLI maintainer behavior.
 - `work/` stores temporary processing state and ingest manifests.
 - No database is required for Phase 1 operation.
 
@@ -64,6 +67,8 @@ flowchart LR
 - `summarize` -> `summarize`, `notes`
 - `link` -> `linking`, `notes`
 - `check` -> `check`, `notes`
+- `query` -> `search`, `notes`, `summarize`
+- `lint` -> `check`, `notes`
 
 ## Operational Characteristics
 

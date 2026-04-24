@@ -60,5 +60,6 @@ Phase 1 is intentionally narrow: deliver a robust local CLI workflow around mark
 - Add optional intelligence services that sit on top of the Phase 1 markdown corpus.
 - Keep markdown files in `wiki/` as canonical long-term source of truth.
 - Evaluate advanced retrieval and reasoning features as optional modules, not core storage.
+- When scoping Phase 2, evaluate external tooling candidates such as [Graphify](https://github.com/safishamsi/graphify) and [Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract) (see [FUTURE_PHASE_2.md](FUTURE_PHASE_2.md)); no Phase 1 dependency.
 
 See [FUTURE_PHASE_2.md](FUTURE_PHASE_2.md) for scope boundaries and future directions.
