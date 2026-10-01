@@ -33,6 +33,7 @@ def ingest(
     summarize: bool = typer.Option(True, "--summarize/--no-summarize"),
     link_suggestions: bool = typer.Option(False, "--link-suggestions"),
     touch_related: bool = typer.Option(False, "--touch-related"),
+    extract: bool = typer.Option(False, "--extract", help="Quality-gated path. Only clean extracts become notes."),
 ) -> None:
     """Ingest local files into raw and create notes."""
     commands.cmd_ingest(
@@ -44,6 +45,7 @@ def ingest(
         summarize=summarize,
         link_suggestions=link_suggestions,
         touch_related=touch_related,
+        extract=extract,
     )
 
 

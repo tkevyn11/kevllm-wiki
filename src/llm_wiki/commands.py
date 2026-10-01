@@ -83,12 +83,25 @@ def cmd_ingest(
     summarize: bool = True,
     link_suggestions: bool = False,
     touch_related: bool = False,
+    extract: bool = False,
 ) -> None:
     root = library_root(library)
     ensure_structure(root)
     src = Path(input_path).resolve()
     if not src.exists():
         fail("Input not found.", EXIT_ARGS)
+    if extract:
+        _ingest_with_extraction(
+            root=root,
+            src=src,
+            note_type=note_type,
+            title=title,
+            note_id=note_id,
+            summarize=summarize,
+            link_suggestions=link_suggestions,
+            touch_related=touch_related,
+        )
+        return
     files = [p for p in src.rglob("*") if p.is_file()] if src.is_dir() else [src]
     created = 0
     for file_path in files:
@@ -155,6 +168,155 @@ def cmd_ingest(
         append_log(root, "ingest", f"{file_path.name} -> {candidate_id}")
         created += 1
     typer.echo(f"Ingested {created} file(s).")
+
+
+def _ingest_with_extraction(
+    root: Path,
+    src: Path,
+    note_type: str,
+    title: str | None,
+    note_id: str | None,
+    summarize: bool,
+    link_suggestions: bool,
+    touch_related: bool,
+) -> None:
+    """Opt-in quality gate. Legacy ingest does not call this."""
+    from .ingest import extract_sources
+
+    source_root = src if src.is_dir() else src.parent
+    files = [src] if src.is_file() else [path for path in src.rglob("*") if path.is_file()]
+    for file_path in files:
+        relative = file_path.relative_to(source_root)
+        destination = root / RAW_DIR / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(file_path, destination)
+
+    output_dir = root / "derived" / "extraction"
+    payload = extract_sources(src, output_dir)
+    events: list[dict[str, Any]] = []
+    failed = False
+    for item in payload["results"]:
+        status = str(item["status"])
+        relative = str(item["relative_path"])
+        raw_relative = f"{RAW_DIR}/{relative}"
+        created_id = ""
+        if status == "clean":
+            created_id = _write_clean_note(
+                root=root,
+                output_dir=output_dir,
+                item=item,
+                raw_relative=raw_relative,
+                note_type=note_type,
+                title=title,
+                note_id=note_id,
+                summarize=summarize,
+                link_suggestions=link_suggestions,
+                touch_related=touch_related,
+            )
+            typer.echo(f"Clean: created note {created_id}")
+        elif status == "review":
+            typer.echo(f"Review: {relative} requires review; no canonical note created")
+        elif status == "ocr_needed":
+            typer.echo(f"OCR needed: {relative} — OCR is required but not enabled yet")
+        elif status == "skip":
+            typer.echo(f"Skipped: {relative}")
+        elif status == "reject":
+            failed = True
+            typer.echo(f"Rejected: {relative} — {item['reason']}")
+        else:
+            failed = True
+            typer.echo(f"Error: {relative} — {item['reason']}")
+        events.append(
+            {
+                "schema_version": 1,
+                "event": "extract",
+                "ingested_at": now_iso(),
+                "source_relative": relative,
+                "raw_relative": raw_relative,
+                "sha256": item["sha256"],
+                "note_id": created_id or None,
+                "extraction_status": status,
+            }
+        )
+    event_path = output_dir / "manifests" / "ingest.jsonl"
+    event_path.parent.mkdir(parents=True, exist_ok=True)
+    event_path.write_text(
+        "".join(json.dumps(event, ensure_ascii=False) + "\n" for event in events),
+        encoding="utf-8",
+        newline="\n",
+    )
+    counts = payload["counts"]
+    typer.echo(
+        "Extracted {n} file(s): clean={clean} review={review} ocr_needed={ocr_needed} "
+        "skip={skip} reject={reject} error={error}".format(
+            n=len(payload["results"]),
+            clean=counts.get("clean", 0),
+            review=counts.get("review", 0),
+            ocr_needed=counts.get("ocr_needed", 0),
+            skip=counts.get("skip", 0),
+            reject=counts.get("reject", 0),
+            error=counts.get("error", 0),
+        )
+    )
+    if failed:
+        raise typer.Exit(EXIT_VALIDATION)
+
+
+def _write_clean_note(
+    root: Path,
+    output_dir: Path,
+    item: dict[str, Any],
+    raw_relative: str,
+    note_type: str,
+    title: str | None,
+    note_id: str | None,
+    summarize: bool,
+    link_suggestions: bool,
+    touch_related: bool,
+) -> str:
+    relative = Path(str(item["relative_path"]))
+    base = note_id or slugify(relative.stem)
+    candidate_id = base or "untitled"
+    index = 2
+    while (root / WIKI_DIR / f"{candidate_id}.md").exists():
+        candidate_id = f"{base or 'untitled'}-{index}"
+        index += 1
+    extracted = ""
+    output_relative = str(item.get("output_relative_path") or "")
+    if output_relative:
+        extracted = (output_dir / output_relative).read_text(encoding="utf-8")
+    ts = now_iso()
+    note_title = title or relative.stem.replace("_", " ").title()
+    summary = _summarize_text(note_title, extracted) if summarize else ""
+    fm: dict[str, Any] = {
+        "id": candidate_id,
+        "title": note_title,
+        "type": note_type,
+        "created": ts,
+        "updated": ts,
+        "sources": [{"ref": raw_relative, "kind": "file", "ingested_at": ts}],
+        "related": [],
+        "source_file": raw_relative,
+        "source_sha256": item["sha256"],
+        "extraction_status": "clean",
+    }
+    body = f"# {note_title}\n\n"
+    if summarize:
+        body += f"## Summary\n\n{summary}\n\n"
+    body += f"## Source\n\n- `{raw_relative}`\n\n{extracted.strip()}\n"
+    note_path = root / WIKI_DIR / f"{candidate_id}.md"
+    write_note(Note(path=note_path, fm=fm, body=body))
+    _update_index(root, candidate_id, note_title, summary or "Ingested source note.")
+    if link_suggestions:
+        linked_ids = _auto_link_suggestions(root, candidate_id, note_title, extracted)
+        if linked_ids:
+            append_log(root, "link-suggest", f"{candidate_id} -> {', '.join(linked_ids)}")
+            if touch_related:
+                touched = _touch_related_notes(root, linked_ids)
+                if touched:
+                    append_log(root, "touch-related", f"{candidate_id} refreshed {', '.join(touched)}")
+    append_log(root, "extract", f"{relative.as_posix()} -> {candidate_id}")
+    return candidate_id
 
 
 def cmd_search(query: str, library: str | None = None, limit: int = 10, as_json: bool = False) -> None:

@@ -48,7 +48,7 @@ Copy local sources into the library and create notes.
 
 ### Usage
 
-`llm-wiki ingest <input> [--library PATH] [--type TYPE] [--title TITLE] [--id NOTE_ID] [--summarize/--no-summarize] [--link-suggestions] [--touch-related]`
+`llm-wiki ingest <input> [--library PATH] [--type TYPE] [--title TITLE] [--id NOTE_ID] [--summarize/--no-summarize] [--link-suggestions] [--touch-related] [--extract]`
 
 ### Arguments
 
@@ -67,7 +67,22 @@ Copy local sources into the library and create notes.
 - Updates `wiki/index.md` and appends `wiki/log.md`.
 - `--link-suggestions` adds `related` ids when keyword overlap is strong enough.
 - `--touch-related` refreshes summaries and index lines for notes linked in that same pass.
-- Text-like files (`.md`, `.txt`, and similar) are read as text. `.pdf` uses `pypdf` when import succeeds. `.docx` uses `python-docx` when import succeeds. This command does not use the quality-gated extractor in `llm_wiki.ingest`. That service is documented in [EXTRACTION.md](EXTRACTION.md) and is not wired in yet.
+- Text-like files (`.md`, `.txt`, and similar) are read as text. `.pdf` uses `pypdf` when import succeeds. `.docx` uses `python-docx` when import succeeds.
+- Without `--extract`, every file becomes a wiki note. `work/ingest-manifest.jsonl` keeps the legacy event `ingest`, including an absolute `input` path.
+- `--extract` is the quality-gated path. It does not change the command above when the flag is absent. See [EXTRACTION.md](EXTRACTION.md).
+
+### `--extract`
+
+- Copies each file into `raw/` using its path relative to the input file or directory, so two files with the same basename stay distinct.
+- Runs local detection, extraction, and the quality gate. OCR is not called.
+- Writes rebuildable output under `derived/extraction/`.
+- Creates a canonical wiki note only for `clean`. The note body contains the extracted text, not a fenced copy of the source bytes. Optional frontmatter: `source_file` (workspace-relative), `source_sha256`, `extraction_status`.
+- `review`, `ocr_needed`, `skip`, `reject`, and `error` do not create a wiki note.
+- A directory is processed file by file. One bad file does not stop the others.
+- Exit `0` when every file is `clean`, `review`, `ocr_needed`, or `skip`.
+- Exit `3` when any file is `reject` or `error`, after the rest of the batch has still been processed.
+- Records portable events in `derived/extraction/manifests/ingest.jsonl` (`event: extract`, `schema_version: 1`). That file is separate from the legacy `work/ingest-manifest.jsonl` and does not store absolute paths.
+- `--link-suggestions` and `--touch-related` still apply to notes that were actually created.
 
 ## Command: `list`
 

@@ -1,6 +1,6 @@
 # Local Extraction
 
-`llm_wiki.ingest` is a framework service. `llm-wiki ingest` does not call it yet.
+`llm_wiki.ingest` is a framework service. `llm-wiki ingest` uses it only when you pass `--extract`. Without that flag, ingest keeps the frozen baseline: every file becomes a note, and `work/ingest-manifest.jsonl` still records an absolute input path.
 
 ```text
 source -> detect -> extract -> quality gate -> derived/extraction -> manifest
@@ -44,6 +44,30 @@ Text-like files are also sniffed for JPEG, PNG, ZIP, `[Content_Types].xml`, and 
 - PDF: `pypdf`.
 - DOCX: `python-docx`.
 - PPTX: slide text from the package XML, kept behind `## Slide N` headings. No extra dependency.
+
+## Ingest integration
+
+```bash
+llm-wiki ingest path/to/sample-paper.md --extract
+llm-wiki ingest path/to/folder --extract
+```
+
+| Status | Wiki note | What you see |
+|---|---|---|
+| `clean` | Created from the extracted text | `Clean: created note <id>` |
+| `review` | Not created | `Review: ... requires review` |
+| `ocr_needed` | Not created | `OCR needed: ...` OCR is not enabled |
+| `skip` | Not created | `Skipped: ...` |
+| `reject` | Not created | `Rejected: ...` and exit 3 |
+| `error` | Not created | `Error: ...` and exit 3 |
+
+A mixed directory still processes every file. Exit code `3` means at least one `reject` or `error`. `review`, `ocr_needed`, and `skip` do not by themselves fail the command.
+
+Provenance copies keep their relative path under `raw/`. Note ids still come from the filename stem, with `-2` when that id already exists.
+
+`--extract` writes `derived/extraction/manifests/ingest.jsonl`. Each line is an `extract` event with `schema_version: 1`, a workspace-relative `raw_relative` path, a source-relative path, a sha256, a note id when a note was created, and the extraction status. It does not contain absolute paths. The legacy `ingest` event in `work/ingest-manifest.jsonl` is unchanged and is not written by `--extract`.
+
+`derived/` can be deleted and produced again. `wiki/` remains the canonical store. Nothing in this path calls a network service or an OCR engine.
 
 ## Entry point
 

@@ -30,8 +30,9 @@ Optional:
 
 ## Ingest Rules
 
-- Ingest copies source files into `raw/` by basename.
-- Ingest creates a new note in `wiki/`. If that id already exists, the new note id is suffixed (`-2`, `-3`, ...) and the existing note is not rewritten.
+- Ingest without `--extract` copies source files into `raw/` by basename.
+- Ingest without `--extract` creates a new note in `wiki/`. If that id already exists, the new note id is suffixed (`-2`, `-3`, ...) and the existing note is not rewritten.
+- `llm-wiki ingest --extract` keeps relative paths under `raw/`, runs the local quality gate, and creates a wiki note only for status `clean`. Other statuses stay out of `wiki/`. OCR is not run.
 - Default ingest writes `## Summary`.
 - Ingest updates `wiki/index.md` and appends `wiki/log.md`.
 - Optional flags:
