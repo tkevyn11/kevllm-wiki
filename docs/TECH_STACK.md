@@ -14,7 +14,7 @@
 
 - **Filesystem**: `pathlib` (standard library)
 - **Metadata parsing**: `PyYAML` for frontmatter blocks
-- **Declared readers**: `pypdf` for PDF text, `python-docx` for DOCX text. `python-pptx` is declared in `pyproject.toml` and is not called by the current reader.
+- **Declared readers**: `pypdf` for PDF text and `python-docx` for DOCX text. PPTX slide text in the extraction service uses the standard-library ZIP/XML reader. `python-pptx` is not a dependency.
 - **Text processing**: standard library (`re`, `datetime`, `json`)
 - **Command execution/open behavior**: `os`, `subprocess`, `webbrowser`, platform-specific helpers
 

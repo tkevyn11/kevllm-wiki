@@ -66,7 +66,7 @@ Re-ingest does not update the existing note.
 
 - Review the new note after ingest.
 - Edit `wiki/` directly. Later ingests of the same filename will not overwrite that file.
-- There is no quality gate yet. Weak extracts should be fixed in the note or ingested with `--no-summarize`.
+- `llm-wiki ingest` still has no quality gate. A separate local extractor lives in `llm_wiki.ingest` and writes `derived/extraction/`; the ingest command does not call it yet. See [EXTRACTION.md](EXTRACTION.md). Weak extracts should be fixed in the note or ingested with `--no-summarize`.
 
 ## Manifest Example
 

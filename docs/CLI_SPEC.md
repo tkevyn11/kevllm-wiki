@@ -67,7 +67,7 @@ Copy local sources into the library and create notes.
 - Updates `wiki/index.md` and appends `wiki/log.md`.
 - `--link-suggestions` adds `related` ids when keyword overlap is strong enough.
 - `--touch-related` refreshes summaries and index lines for notes linked in that same pass.
-- Text-like files (`.md`, `.txt`, and similar) are read as text. `.pdf` uses `pypdf` when import succeeds. `.docx` uses `python-docx` when import succeeds. Other bytes are not a quality-gated extraction pipeline.
+- Text-like files (`.md`, `.txt`, and similar) are read as text. `.pdf` uses `pypdf` when import succeeds. `.docx` uses `python-docx` when import succeeds. This command does not use the quality-gated extractor in `llm_wiki.ingest`. That service is documented in [EXTRACTION.md](EXTRACTION.md) and is not wired in yet.
 
 ## Command: `list`
 
