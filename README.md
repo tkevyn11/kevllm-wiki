@@ -1,104 +1,292 @@
-# LLM-Wiki (Phase 1)
+# kevllm-wiki
 
-LLM-Wiki is a local-first, CLI-first personal knowledge library that keeps markdown files as the long-term source of truth. Phase 1 focuses on a narrow, practical workflow: initialize a library, ingest materials, create and maintain structured notes, and query the wiki from the terminal without introducing heavy infrastructure.
+**A local-first, CLI-first framework for turning documents into a private Markdown knowledge base.**
 
-Karpathy-style layering is explicitly supported: `raw/` + `wiki/` + `schema/`, with transient `work/` and rebuildable `derived/`. User notes belong in a separate workspace, not in this Git history. See [docs/PRIVACY.md](docs/PRIVACY.md).
+kevllm-wiki keeps **Markdown + YAML frontmatter as the long-term source of truth**, while adding quality-gated document extraction, optional local OCR, explicit human review, local search, linking, validation, and rebuildable derived outputs.
 
-LLM maintainer rules are provided via `CLAUDE.md` (root) and `schema/CLAUDE.md`.
+> **Current release:** `v0.2.0`  
+> **Status:** Generic Framework MVP — **COMPLETE**  
+> **License:** MIT
 
-## Phase 1 Scope
+[Release notes](docs/RELEASE_NOTES_v0.2.0.md) · [Quickstart](docs/QUICKSTART.md) · [User guide](docs/USER_GUIDE.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md)
 
-- Markdown in `wiki/` is canonical. `raw/` stores source copies, `work/` is transient, and `derived/` is rebuildable output.
-- CLI is the primary interface (`llm-wiki`).
-- Search is local keyword search over markdown notes.
-- Notes use markdown plus YAML frontmatter.
-- No database, vector search, knowledge graph, or heavy UI in Phase 1.
+---
 
-## Current Stage
+## What it does
 
-- kevllm-wiki v0.2.0
-- Generic Framework MVP — COMPLETE
-- Package version: `0.2.0`.
-- License: MIT
-- The base CLI, quality-gated extraction, optional local OCR, review promotion, and nested notes are implemented.
-- Progress and the candidate notes are in [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/RELEASE_NOTES_v0.2.0.md](docs/RELEASE_NOTES_v0.2.0.md).
+kevllm-wiki provides a lightweight workflow for building and maintaining a local knowledge library without requiring a database, hosted vector store, or cloud LLM.
 
-## Phase 2 Boundary
+### Core capabilities
 
-Phase 2 is intentionally separate and deferred. A future GBrain-inspired intelligence layer may be added on top of the Phase 1 markdown corpus, but it does not replace markdown files as source of truth. Candidate external tools to evaluate in Phase 2 (for example [Graphify](https://github.com/safishamsi/graphify), [Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract)) are noted in [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md), not used in Phase 1.
+- **Local-first knowledge base** — canonical notes remain ordinary Markdown files.
+- **CLI-first workflow** — initialize, ingest, list, search, open, summarize, link, validate, query, lint, and review from the terminal.
+- **Quality-gated extraction** — extracts readable text from Markdown/text, PDF, DOCX, and PPTX sources.
+- **Optional local OCR** — supports standalone images and scanned PDFs through an optional PaddleOCR backend.
+- **Human review workflow** — low-confidence extracts stay non-canonical until explicitly approved.
+- **Nested notes** — organize `wiki/` into folders without losing search, validation, or linking.
+- **Portable provenance** — derived manifests use relative paths and content hashes rather than machine-specific absolute paths.
+- **Privacy-aware by design** — source files, user notes, temporary work, derived indexes, credentials, and OCR output are kept out of the framework's Git history.
 
-See [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md).
+---
 
-## Folder Philosophy
+## Design philosophy
 
-- `raw/`: source material and provenance copies. May be private.
-- `wiki/`: canonical markdown knowledge base.
-- `work/`: transient processing files and manifests.
-- `derived/`: rebuildable graph, vector, semantic, and extraction outputs. Never canonical.
-- `schema/`: workflow conventions and note schema contract.
-- `docs/`: product, architecture, and specification documents.
+The framework separates canonical knowledge from source material and rebuildable processing artifacts:
 
-## Optional Integrations (Phase 1 Compatible)
+```text
+source documents
+      ↓
+    raw/
+      ↓
+detect → extract → quality gate → optional OCR
+      ↓
+  derived/
+      ↓
+ clean ───────────────────────→ wiki/
+ review → human review
+              ├─ approve ─────→ wiki/
+              └─ reject
+```
 
-These are optional helpers that fit the Phase 1 architecture. They are not required dependencies and do not change markdown-as-source-of-truth.
+### Workspace layers
 
-- **Web clipper**: use any clipper to save web articles as markdown into `raw/`.
-- **Local image downloads**: keep images under `raw/assets/` and reference them from notes.
-- **Obsidian graph view**: optional visualization layer over `wiki/` files.
-- **Marp**: optional presentation output from selected markdown notes.
-- **Dataview**: optional frontmatter querying for local browsing/reporting.
+| Layer | Purpose |
+| --- | --- |
+| `raw/` | Original source material and provenance copies |
+| `wiki/` | **Canonical** Markdown + YAML knowledge base |
+| `work/` | Transient processing state |
+| `derived/` | Rebuildable extraction, graph, vector, or semantic outputs |
+| `schema/` | Note and workflow conventions |
 
-## CLI Commands
+Deleting `derived/` must never destroy canonical knowledge.
 
-- `init`
-- `ingest`
-- `list`
-- `search`
-- `open`
-- `summarize`
-- `link`
-- `check`
-- `query`
-- `lint`
-- `review`
-
-Details and the behavior locked by tests are in [docs/CLI_SPEC.md](docs/CLI_SPEC.md).
+---
 
 ## Quickstart
 
-Install this package, then initialize a separate folder:
+Clone/install the framework, then create your knowledge workspace in a **separate directory**.
 
 ```bash
-pip install -e .
+git clone https://github.com/tkevyn11/kevllm-wiki.git
+cd kevllm-wiki
+python -m pip install -e .
+```
+
+Create a workspace:
+
+```bash
 mkdir my-knowledge
 cd my-knowledge
 llm-wiki init
-llm-wiki ingest path/to/sample-paper.md
+```
+
+Ingest and explore:
+
+```bash
+llm-wiki ingest path/to/sample-paper.md --extract
 llm-wiki list
 llm-wiki search "distributed systems"
 llm-wiki check
+llm-wiki lint
 ```
 
-See [docs/QUICKSTART.md](docs/QUICKSTART.md).
+See the full [Quickstart](docs/QUICKSTART.md).
 
-## Documentation Map
+---
 
-- Product requirements: [docs/PRD.md](docs/PRD.md)
-- Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
-- MVP boundaries: [docs/MVP_SCOPE.md](docs/MVP_SCOPE.md)
-- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- Tech choices: [docs/TECH_STACK.md](docs/TECH_STACK.md)
-- Quick reference: [docs/QUICKSTART.md](docs/QUICKSTART.md)
-- User manual: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
-- CLI contract: [docs/CLI_SPEC.md](docs/CLI_SPEC.md)
-- Note schema: [docs/NOTE_SCHEMA.md](docs/NOTE_SCHEMA.md)
-- Ingest flow: [docs/INGEST_WORKFLOW.md](docs/INGEST_WORKFLOW.md)
-- Folder structure: [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md)
-- Decision record: [docs/DECISIONS.md](docs/DECISIONS.md)
-- Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
-- v0.2.0 notes: [docs/RELEASE_NOTES_v0.2.0.md](docs/RELEASE_NOTES_v0.2.0.md)
-- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Security reports: [SECURITY.md](SECURITY.md)
-- Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
-- Extraction and optional local OCR: [docs/EXTRACTION.md](docs/EXTRACTION.md)
-- Future phase: [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md)
+## Quality-gated ingestion
+
+The original ingest behavior remains available:
+
+```bash
+llm-wiki ingest path/to/file
+```
+
+The v0.2 quality-gated path is opt-in:
+
+```bash
+llm-wiki ingest path/to/file --extract
+```
+
+Extraction results are classified as:
+
+```text
+clean
+review
+reject
+ocr_needed
+skip
+error
+```
+
+Only `clean` content is promoted automatically into `wiki/`.
+
+### Optional OCR
+
+Install the OCR extras for image and scanned-PDF recognition:
+
+```bash
+python -m pip install -e ".[ocr]"
+```
+
+PaddlePaddle is installed separately according to the platform/CPU/GPU configuration described in [docs/EXTRACTION.md](docs/EXTRACTION.md).
+
+Then run:
+
+```bash
+llm-wiki ingest scan.pdf --extract --ocr
+```
+
+OCR runs locally after the required models are available. First-time model setup may require network access; source documents are not uploaded to an OCR API.
+
+---
+
+## Human review
+
+Items classified as `review` remain in `derived/` and do not become canonical notes automatically.
+
+```bash
+llm-wiki review list
+llm-wiki review show <review-id>
+llm-wiki review approve <review-id>
+llm-wiki review reject <review-id>
+```
+
+Approval is explicit, provenance is preserved, and repeated/conflicting decisions are handled safely.
+
+---
+
+## CLI
+
+The v0.2 command surface is:
+
+```text
+init
+ingest
+list
+search
+open
+summarize
+link
+check
+query
+lint
+review
+```
+
+See [docs/CLI_SPEC.md](docs/CLI_SPEC.md) for the command contract and exit-code behavior.
+
+---
+
+## Local-first does not mean "no AI"
+
+The framework is intentionally useful **before** adding heavier AI infrastructure. Markdown remains canonical, while future retrieval, graph, vector, semantic, or agent layers can be generated from it as disposable/rebuildable representations.
+
+Optional integrations must not replace the underlying knowledge files as the source of truth.
+
+---
+
+## Privacy model
+
+User workspaces should live outside the framework repository.
+
+The public Git repository intentionally excludes runtime/private data such as:
+
+```text
+raw/
+wiki/
+work/
+derived/
+.env
+credentials
+OCR output
+generated indexes
+local databases
+IDE-specific state
+```
+
+Generated/derived data may contain fragments of source material, so it should be handled with the same privacy expectations as the original content.
+
+See [docs/PRIVACY.md](docs/PRIVACY.md).
+
+---
+
+## Current scope
+
+### v0.2.0 — Generic Framework MVP
+
+Implemented:
+
+- Markdown/YAML canonical note model
+- local CLI workflow
+- text/Markdown/PDF/DOCX/PPTX extraction
+- quality gates
+- optional image + scanned-PDF OCR
+- explicit review/approval/rejection
+- nested canonical notes
+- portable derived manifests/events
+- local keyword search and query
+- linking, integrity checks, and linting
+- safer framework/workspace separation
+- CI, packaging, contribution, security, and release documentation
+
+### Deferred / future
+
+Intentionally outside the v0.2 MVP:
+
+- OCR for image-only DOCX/PPTX
+- MCP retrieval
+- vector/semantic search
+- GBrain/Semantica-style intelligence layers
+- web or TUI interfaces
+- cloud-hosted knowledge storage
+
+See [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+
+---
+
+## Optional integrations
+
+The architecture can support tools that operate over the Markdown corpus without becoming canonical dependencies.
+
+Examples include:
+
+- Obsidian for browsing and graph visualization
+- Graphify for rebuildable graph output under `derived/graphify/`
+- Marp for presentations generated from selected Markdown notes
+- Dataview for optional frontmatter-driven local views
+
+---
+
+## Documentation
+
+- [Quickstart](docs/QUICKSTART.md)
+- [User guide](docs/USER_GUIDE.md)
+- [CLI specification](docs/CLI_SPEC.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Extraction & OCR](docs/EXTRACTION.md)
+- [Note schema](docs/NOTE_SCHEMA.md)
+- [Folder structure](docs/FOLDER_STRUCTURE.md)
+- [Privacy](docs/PRIVACY.md)
+- [Security](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
+- [Roadmap](docs/ROADMAP.md)
+- [v0.2.0 release notes](docs/RELEASE_NOTES_v0.2.0.md)
+
+---
+
+## Development
+
+Run the test suite:
+
+```bash
+pytest -q
+```
+
+The v0.2.0 release was validated with **90 passing tests**, package builds, clean-wheel installation, CLI smoke testing, and GitHub Actions on Python 3.11 and 3.12.
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE).
