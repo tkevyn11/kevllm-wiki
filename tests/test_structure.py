@@ -87,6 +87,7 @@ def test_nested_note_opens_by_id(monkeypatch) -> None:
         _init()
         _write("research/paper-a.md", "paper-a", "Sample Paper", "A nested canonical note.\n")
         opened: dict[str, str] = {}
+        monkeypatch.setattr(commands.sys, "platform", "win32")
         monkeypatch.setattr(commands.os, "startfile", lambda p: opened.setdefault("path", p), raising=False)
         result = runner.invoke(app, ["open", "paper-a", "-C", "."])
         assert result.exit_code == 0, result.stdout
