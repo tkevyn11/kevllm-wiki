@@ -1,4 +1,4 @@
-"""Quality-gated local extraction. Not used by ``llm-wiki ingest`` yet."""
+"""Quality-gated local extraction. ``llm-wiki ingest`` uses it with ``--extract``."""
 
 from .manifest import extract_sources
 from .models import OcrProvider, ExtractionResult

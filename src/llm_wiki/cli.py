@@ -34,6 +34,7 @@ def ingest(
     link_suggestions: bool = typer.Option(False, "--link-suggestions"),
     touch_related: bool = typer.Option(False, "--touch-related"),
     extract: bool = typer.Option(False, "--extract", help="Quality-gated path. Only clean extracts become notes."),
+    ocr: bool = typer.Option(False, "--ocr", help="Local OCR for images and scanned PDFs. Requires --extract."),
 ) -> None:
     """Ingest local files into raw and create notes."""
     commands.cmd_ingest(
@@ -46,6 +47,7 @@ def ingest(
         link_suggestions=link_suggestions,
         touch_related=touch_related,
         extract=extract,
+        ocr=ocr,
     )
 
 

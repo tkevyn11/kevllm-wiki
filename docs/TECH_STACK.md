@@ -42,7 +42,7 @@
   - `raw/` for source copies
   - `wiki/` for canonical markdown notes
   - `work/` for transient artifacts and ingest manifests
-  - `derived/` reserved for rebuildable indexes and extracts (not written by the core CLI yet)
+  - `derived/` for rebuildable extracts (`llm-wiki ingest --extract`) and future indexes
 
 ## External Dependencies Policy
 
@@ -65,3 +65,12 @@
 - **Dataview** (optional query plugin): run local queries against note frontmatter.
 
 These tools are optional and must not become required runtime dependencies for CLI functionality.
+
+## Optional local OCR
+
+Not required for `pip install -e .` or for `llm-wiki ingest`.
+
+- **Extra**: `pip install -e ".[ocr]"` installs `paddleocr` and `pymupdf`.
+- **Engine**: PaddlePaddle 3.x is separate. A CPU example is `python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/`.
+- **Use**: `llm-wiki ingest <source> --extract --ocr`.
+- **Scope**: local images and scanned PDFs. No cloud OCR API. Model setup may download weights; source files stay on the machine.

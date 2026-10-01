@@ -19,8 +19,8 @@ This file describes the behavior locked by the characterization tests on `feat/g
 
 - `0`: success, including empty `list` and `search` results
 - `1`: reserved for unexpected runtime failure (not returned by the commands below)
-- `2`: invalid arguments, missing ingest input, unsupported summarize mode, or a query with no usable terms
-- `3`: validation failure from `check` or `lint`
+- `2`: invalid arguments, missing ingest input, unsupported summarize mode, a query with no usable terms, `--ocr` without `--extract`, or `--ocr` when the optional local OCR packages are not installed
+- `3`: validation failure from `check` or `lint`, or a `--extract` batch that contains `reject` or `error`
 - `4`: target not found (note id or path not resolved)
 
 ## Command: `init`
@@ -74,7 +74,7 @@ Copy local sources into the library and create notes.
 ### `--extract`
 
 - Copies each file into `raw/` using its path relative to the input file or directory, so two files with the same basename stay distinct.
-- Runs local detection, extraction, and the quality gate. OCR is not called.
+- Runs local detection, extraction, and the quality gate. OCR is not called unless `--ocr` is also set.
 - Writes rebuildable output under `derived/extraction/`.
 - Creates a canonical wiki note only for `clean`. The note body contains the extracted text, not a fenced copy of the source bytes. Optional frontmatter: `source_file` (workspace-relative), `source_sha256`, `extraction_status`.
 - `review`, `ocr_needed`, `skip`, `reject`, and `error` do not create a wiki note.
@@ -83,6 +83,17 @@ Copy local sources into the library and create notes.
 - Exit `3` when any file is `reject` or `error`, after the rest of the batch has still been processed.
 - Records portable events in `derived/extraction/manifests/ingest.jsonl` (`event: extract`, `schema_version: 1`). That file is separate from the legacy `work/ingest-manifest.jsonl` and does not store absolute paths.
 - `--link-suggestions` and `--touch-related` still apply to notes that were actually created.
+
+### `--extract --ocr`
+
+- `--ocr` without `--extract` exits `2`. It does not ingest the file.
+- Images, and PDFs with no meaningful text layer, go to the local PaddleOCR provider. The recognized text is normalized and run through the same quality gate. OCR success is not automatically `clean`.
+- A wiki note is created only when the post-OCR status is `clean`. `review` stays under `derived/extraction/text/` and is not promoted.
+- Scanned PDFs are rendered on this machine with PyMuPDF, one page at a time, and the text keeps `## Page N` headings.
+- DOCX and PPTX files that have no text layer stay `ocr_needed`.
+- A missing OCR install exits `2` with the install command. The command does not skip OCR and continue.
+- Portable events gain `ocr_used`, `ocr_provider`, and `ocr_pages`. Those fields do not store absolute paths or model-cache directories.
+- Base install remains `pip install -e .`. The OCR extra is `pip install -e ".[ocr]"`. PaddlePaddle is a separate local engine; see [EXTRACTION.md](EXTRACTION.md).
 
 ## Command: `list`
 

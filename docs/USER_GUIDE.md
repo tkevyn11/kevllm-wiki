@@ -56,7 +56,7 @@ llm-wiki ingest path/to/folder --no-summarize
 llm-wiki ingest path/to/sample-paper.md --extract
 ```
 
-Without `--extract`, every file becomes a note. With `--extract`, only a `clean` local extract becomes a note. Short or uncertain extracts stay in `derived/extraction/` for review. Images and textless PDFs are reported as needing OCR, which is not enabled yet. `reject` and `error` finish the batch and then exit `3`. See [EXTRACTION.md](EXTRACTION.md).
+Without `--extract`, every file becomes a note. With `--extract`, only a `clean` local extract becomes a note. Short or uncertain extracts stay in `derived/extraction/` for review and are not promoted automatically. Images and textless PDFs stay `ocr_needed` unless you also pass `--ocr`. That flag runs optional local OCR, then the same quality gate. `reject` and `error` finish the batch and then exit `3`. See [EXTRACTION.md](EXTRACTION.md).
 
 - Directory ingest is recursive. Each file is copied by its basename into `raw/`, not by its relative path.
 - The original file outside the library is not modified.

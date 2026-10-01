@@ -51,7 +51,7 @@ Define a predictable, local ingest process that transforms raw materials into st
 
 ## PDF and Office Files
 
-Ingest can read text from a `.pdf` via `pypdf` and from a `.docx` via `python-docx` when those imports succeed. The extract is copied into the new note. There is no OCR step and no quality gate. If that text is poor, ingest a markdown or text export instead, or use `--no-summarize` and edit the note.
+Ingest without `--extract` can read text from a `.pdf` via `pypdf` and from a `.docx` via `python-docx` when those imports succeed. That path has no quality gate and no OCR. If that text is poor, ingest a markdown or text export instead, or use `--no-summarize` and edit the note.
 
 ## Re-ingest Behavior
 
@@ -67,7 +67,8 @@ Re-ingest does not update the existing note.
 - Review the new note after ingest.
 - Edit `wiki/` directly. Later ingests of the same filename will not overwrite that file.
 - Without `--extract`, ingest still creates a note for every file and does not run the quality gate. Weak extracts should be fixed in the note or ingested with `--no-summarize`.
-- `llm-wiki ingest <input> --extract` runs the local quality gate. Only `clean` results become wiki notes. `review` stays under `derived/extraction/text/` until a person promotes it. OCR is not available yet. See [EXTRACTION.md](EXTRACTION.md).
+- `llm-wiki ingest <input> --extract` runs the local quality gate. Only `clean` results become wiki notes. `review` stays under `derived/extraction/text/` and is not promoted automatically.
+- `llm-wiki ingest <input> --extract --ocr` adds optional local OCR for images and scanned PDFs. The OCR text still has to pass the quality gate. See [EXTRACTION.md](EXTRACTION.md).
 
 ## Manifest Example
 

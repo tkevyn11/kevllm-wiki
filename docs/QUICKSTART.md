@@ -17,6 +17,8 @@ pip install -e ".[dev]"
 llm-wiki --help
 ```
 
+Base use without the dev tools is `pip install -e .`. Optional local OCR is a separate extra, `pip install -e ".[ocr]"`, plus a local PaddlePaddle engine. It is not required for the commands below. See [EXTRACTION.md](EXTRACTION.md).
+
 ## 2) Create a workspace
 
 ```bash

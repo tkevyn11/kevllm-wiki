@@ -93,5 +93,5 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md).
 - Decision record: [docs/DECISIONS.md](docs/DECISIONS.md)
 - Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
 - Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
-- Extraction service (not wired to `ingest` yet): [docs/EXTRACTION.md](docs/EXTRACTION.md)
+- Extraction and optional local OCR: [docs/EXTRACTION.md](docs/EXTRACTION.md)
 - Future phase: [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md)

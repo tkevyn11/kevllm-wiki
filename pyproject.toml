@@ -22,6 +22,10 @@ dev = [
 graphify = [
   "graphifyy>=0.1.15",
 ]
+ocr = [
+  "paddleocr>=3.0",
+  "pymupdf>=1.24.0",
+]
 
 [project.scripts]
 llm-wiki = "llm_wiki.cli:app"

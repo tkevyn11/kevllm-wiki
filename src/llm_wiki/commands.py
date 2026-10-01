@@ -84,12 +84,15 @@ def cmd_ingest(
     link_suggestions: bool = False,
     touch_related: bool = False,
     extract: bool = False,
+    ocr: bool = False,
 ) -> None:
     root = library_root(library)
     ensure_structure(root)
     src = Path(input_path).resolve()
     if not src.exists():
         fail("Input not found.", EXIT_ARGS)
+    if ocr and not extract:
+        fail("`--ocr` requires `--extract`. Use: llm-wiki ingest <source> --extract --ocr", EXIT_ARGS)
     if extract:
         _ingest_with_extraction(
             root=root,
@@ -100,6 +103,7 @@ def cmd_ingest(
             summarize=summarize,
             link_suggestions=link_suggestions,
             touch_related=touch_related,
+            ocr=_load_ocr(ocr),
         )
         return
     files = [p for p in src.rglob("*") if p.is_file()] if src.is_dir() else [src]
@@ -179,6 +183,7 @@ def _ingest_with_extraction(
     summarize: bool,
     link_suggestions: bool,
     touch_related: bool,
+    ocr: Any | None = None,
 ) -> None:
     """Opt-in quality gate. Legacy ingest does not call this."""
     from .ingest import extract_sources
@@ -192,7 +197,7 @@ def _ingest_with_extraction(
         shutil.copy2(file_path, destination)
 
     output_dir = root / "derived" / "extraction"
-    payload = extract_sources(src, output_dir)
+    payload = extract_sources(src, output_dir, ocr=ocr)
     events: list[dict[str, Any]] = []
     failed = False
     for item in payload["results"]:
@@ -217,7 +222,10 @@ def _ingest_with_extraction(
         elif status == "review":
             typer.echo(f"Review: {relative} requires review; no canonical note created")
         elif status == "ocr_needed":
-            typer.echo(f"OCR needed: {relative} — OCR is required but not enabled yet")
+            if ocr is None:
+                typer.echo(f"OCR needed: {relative} — OCR is required but not enabled yet")
+            else:
+                typer.echo(f"OCR needed: {relative} — OCR is not supported for this file type yet")
         elif status == "skip":
             typer.echo(f"Skipped: {relative}")
         elif status == "reject":
@@ -236,6 +244,9 @@ def _ingest_with_extraction(
                 "sha256": item["sha256"],
                 "note_id": created_id or None,
                 "extraction_status": status,
+                "ocr_used": bool(item.get("ocr_used")),
+                "ocr_provider": item.get("ocr_provider") or "",
+                "ocr_pages": int(item.get("ocr_pages") or 0),
             }
         )
     event_path = output_dir / "manifests" / "ingest.jsonl"
@@ -300,6 +311,10 @@ def _write_clean_note(
         "source_sha256": item["sha256"],
         "extraction_status": "clean",
     }
+    if item.get("ocr_used"):
+        fm["ocr_used"] = True
+        fm["ocr_provider"] = item.get("ocr_provider") or ""
+        fm["ocr_pages"] = int(item.get("ocr_pages") or 0)
     body = f"# {note_title}\n\n"
     if summarize:
         body += f"## Summary\n\n{summary}\n\n"
@@ -317,6 +332,17 @@ def _write_clean_note(
                     append_log(root, "touch-related", f"{candidate_id} refreshed {', '.join(touched)}")
     append_log(root, "extract", f"{relative.as_posix()} -> {candidate_id}")
     return candidate_id
+
+
+def _load_ocr(enabled: bool) -> Any | None:
+    if not enabled:
+        return None
+    from .ingest.ocr import OcrDependencyError, load_paddle_provider
+
+    try:
+        return load_paddle_provider()
+    except OcrDependencyError as exc:
+        fail(str(exc), EXIT_ARGS)
 
 
 def cmd_search(query: str, library: str | None = None, limit: int = 10, as_json: bool = False) -> None:

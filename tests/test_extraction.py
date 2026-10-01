@@ -1,6 +1,6 @@
 """Synthetic tests for the quality-gated extraction core.
 
-This subsystem is not called by `llm-wiki ingest`.
+``llm-wiki ingest`` calls this only when ``--extract`` is set.
 """
 
 from __future__ import annotations
@@ -12,14 +12,6 @@ from pathlib import Path
 from pypdf import PdfWriter
 
 from llm_wiki.ingest import extract_sources
-
-
-class _OcrMustNotRun:
-    def extract_image(self, path: Path) -> str:
-        raise AssertionError(f"OCR image hook was called for {path.name}")
-
-    def extract_pdf(self, path: Path) -> str:
-        raise AssertionError(f"OCR pdf hook was called for {path.name}")
 
 
 def _result_map(manifest: dict) -> dict[str, dict]:
@@ -168,7 +160,7 @@ def test_text_pdf_extracts_and_blank_pdf_needs_ocr(tmp_path: Path) -> None:
     source.mkdir()
     _write_text_pdf(source / "sample-paper.pdf", "Sample Paper text layer.")
     _write_blank_pdf(source / "scan.pdf")
-    manifest = extract_sources(source, tmp_path / "out", ocr=_OcrMustNotRun())
+    manifest = extract_sources(source, tmp_path / "out")
     results = _result_map(manifest)
     assert results["sample-paper.pdf"]["status"] == "clean"
     pdf_text = (tmp_path / "out" / results["sample-paper.pdf"]["output_relative_path"]).read_text(encoding="utf-8")
@@ -182,7 +174,7 @@ def test_image_needs_ocr_and_unsupported_is_skipped(tmp_path: Path) -> None:
     source.mkdir()
     (source / "figure.png").write_bytes(b"\x89PNG\r\n\x1a\nIHDR")
     (source / "archive.bin").write_bytes(b"\x00\x01not-a-target")
-    manifest = extract_sources(source, tmp_path / "out", ocr=_OcrMustNotRun())
+    manifest = extract_sources(source, tmp_path / "out")
     results = _result_map(manifest)
     assert results["figure.png"]["status"] == "ocr_needed"
     assert results["figure.png"]["file_type"] == "image"

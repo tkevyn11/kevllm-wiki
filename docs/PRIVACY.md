@@ -30,6 +30,8 @@ Deleting `derived/` or `work/` must not be the only copy of knowledge you care a
 
 Graphify, semantic indexes, MCP caches, and future cloud or LLM integrations are optional. They must not become the source of truth. Do not send library content to a network service unless you chose that command and understand what leaves the machine. The current `summarize` and `query` commands are local; they do not call a model.
 
+`llm-wiki ingest --extract --ocr` is also local. It does not upload the image or PDF to an OCR service. Installing PaddleOCR and its model weights can use the network once. After the weights are cached, recognition can run offline. OCR manifests record the provider name and page count, not a model-cache path.
+
 ## User libraries
 
 Keep a user workspace in a separate folder from this framework checkout. See [USER_GUIDE.md](USER_GUIDE.md). That folder is your data. This Git repository should not track it.

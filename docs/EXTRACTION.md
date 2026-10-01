@@ -6,7 +6,7 @@
 source -> detect -> extract -> quality gate -> derived/extraction -> manifest
 ```
 
-The service reads local files only. It does not call a cloud API, an LLM, or an OCR engine. Images and PDFs without a meaningful text layer are marked `ocr_needed`. An `OcrProvider` argument is accepted and ignored until a later stage.
+The service reads local files only. It does not call a cloud API or an LLM. Images and PDFs without a meaningful text layer are marked `ocr_needed` unless the caller passes an `OcrProvider`. `llm-wiki ingest --extract` does not pass one. `llm-wiki ingest --extract --ocr` passes the local PaddleOCR provider.
 
 ## Outputs
 
@@ -56,7 +56,7 @@ llm-wiki ingest path/to/folder --extract
 |---|---|---|
 | `clean` | Created from the extracted text | `Clean: created note <id>` |
 | `review` | Not created | `Review: ... requires review` |
-| `ocr_needed` | Not created | `OCR needed: ...` OCR is not enabled |
+| `ocr_needed` | Not created | `OCR needed: ...` OCR was not requested, or this file type has no OCR path |
 | `skip` | Not created | `Skipped: ...` |
 | `reject` | Not created | `Rejected: ...` and exit 3 |
 | `error` | Not created | `Error: ...` and exit 3 |
@@ -67,7 +67,30 @@ Provenance copies keep their relative path under `raw/`. Note ids still come fro
 
 `--extract` writes `derived/extraction/manifests/ingest.jsonl`. Each line is an `extract` event with `schema_version: 1`, a workspace-relative `raw_relative` path, a source-relative path, a sha256, a note id when a note was created, and the extraction status. It does not contain absolute paths. The legacy `ingest` event in `work/ingest-manifest.jsonl` is unchanged and is not written by `--extract`.
 
-`derived/` can be deleted and produced again. `wiki/` remains the canonical store. Nothing in this path calls a network service or an OCR engine.
+`derived/` can be deleted and produced again. `wiki/` remains the canonical store. This path does not upload source files.
+
+## Optional local OCR
+
+```bash
+pip install -e .
+pip install -e ".[ocr]"
+python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+```
+
+`pip install -e .` is the base tool. `pip install -e ".[ocr]"` installs `paddleocr` and `pymupdf` from this project's optional `ocr` extra. PaddleOCR 3.x still needs a local PaddlePaddle 3.x engine, and that engine is not part of the extra. The command above is the CPU example from the PaddlePaddle install guide. A GPU machine should use the wheel that matches its driver, from that same guide.
+
+```bash
+llm-wiki ingest path/to/figure.png --extract --ocr
+llm-wiki ingest path/to/scan.pdf --extract --ocr
+```
+
+OCR stays off unless both flags are present. `--ocr` alone exits 2. If the packages are missing, the command exits 2 and prints the install lines. It does not pretend the file was skipped.
+
+The flow is: copy into `raw/`, detect the file, OCR images and textless PDFs locally, normalize the text, then run the same Unicode quality gate. `clean` becomes a note. `review` stays in `derived/extraction/text/`. Short, noisy, or failed OCR does not become a note. There is no promote or `--include-review` flag.
+
+Scanned PDFs are rendered in memory or a temporary file with PyMuPDF and recognized page by page. The extract keeps `## Page N` headings. Poppler is not required. DOCX and PPTX files with no text layer are still `ocr_needed`.
+
+The first run can download model weights, so setup may use the network. After those weights are cached, OCR can run offline. The document or image is not sent to an OCR API. Manifests may name the provider (`paddleocr`) and the page count. They do not store cache directories, usernames, or absolute paths.
 
 ## Entry point
 
