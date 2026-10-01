@@ -16,9 +16,9 @@ LLM maintainer rules are provided via `CLAUDE.md` (root) and `schema/CLAUDE.md`.
 
 ## Current Stage
 
-- Phase 1 core CLI is implemented.
-- Current milestone: hardening and polish (tests, validation depth, and command UX refinement).
-- Progress details are tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
+- Package version: `0.2.0` (release candidate on `feat/generic-framework-v0.2`; not tagged).
+- The base CLI, quality-gated extraction, optional local OCR, review promotion, and nested notes are implemented.
+- Progress and the candidate notes are in [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/RELEASE_NOTES_v0.2.0.md](docs/RELEASE_NOTES_v0.2.0.md).
 
 ## Phase 2 Boundary
 
@@ -93,6 +93,9 @@ See [docs/QUICKSTART.md](docs/QUICKSTART.md).
 - Folder structure: [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md)
 - Decision record: [docs/DECISIONS.md](docs/DECISIONS.md)
 - Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
+- v0.2.0 notes: [docs/RELEASE_NOTES_v0.2.0.md](docs/RELEASE_NOTES_v0.2.0.md)
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security reports: [SECURITY.md](SECURITY.md)
 - Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
 - Extraction and optional local OCR: [docs/EXTRACTION.md](docs/EXTRACTION.md)
 - Future phase: [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md)

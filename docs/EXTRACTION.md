@@ -74,10 +74,11 @@ Provenance copies keep their relative path under `raw/`. Note ids still come fro
 ```bash
 pip install -e .
 pip install -e ".[ocr]"
+pip install "llm-wiki[ocr]"
 python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 ```
 
-`pip install -e .` is the base tool. `pip install -e ".[ocr]"` installs `paddleocr` and `pymupdf` from this project's optional `ocr` extra. PaddleOCR 3.x still needs a local PaddlePaddle 3.x engine, and that engine is not part of the extra. The command above is the CPU example from the PaddlePaddle install guide. A GPU machine should use the wheel that matches its driver, from that same guide.
+`pip install -e .` is the base tool from a checkout. `pip install llm-wiki` is the same base install from a published package. `pip install -e ".[ocr]"` and `pip install "llm-wiki[ocr]"` install `paddleocr` and `pymupdf` from the optional `ocr` extra. PaddleOCR 3.x still needs a local PaddlePaddle 3.x engine, and that engine is not part of the extra. The command above is the CPU example from the PaddlePaddle install guide. A GPU machine should use the wheel that matches its driver, from that same guide.
 
 ```bash
 llm-wiki ingest path/to/figure.png --extract --ocr

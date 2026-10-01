@@ -70,7 +70,7 @@ These tools are optional and must not become required runtime dependencies for C
 
 Not required for `pip install -e .` or for `llm-wiki ingest`.
 
-- **Extra**: `pip install -e ".[ocr]"` installs `paddleocr` and `pymupdf`.
+- **Extra**: `pip install -e ".[ocr]"` from a checkout, or `pip install "llm-wiki[ocr]"` for the published package. Both install `paddleocr` and `pymupdf`. They do not install PaddlePaddle.
 - **Engine**: PaddlePaddle 3.x is separate. A CPU example is `python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/`.
 - **Use**: `llm-wiki ingest <source> --extract --ocr`. `llm-wiki review approve` is a separate local decision and does not call OCR again.
 - **Scope**: local images and scanned PDFs. No cloud OCR API. Model setup may download weights; source files stay on the machine.

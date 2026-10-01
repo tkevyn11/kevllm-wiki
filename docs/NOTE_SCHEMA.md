@@ -44,7 +44,7 @@ Allowed `kind` values in Phase 1:
 ## Linking Rules
 
 - Primary internal link convention: relative markdown links.
-  - Example: `[Transformer Notes](../wiki/transformer-notes.md)`
+  - Example: ``[Transformer Notes](../wiki/transformer-notes.md)``
 - `related` frontmatter supports relationship checks and CLI linking.
 - `check` validates:
   - target file exists for internal markdown links

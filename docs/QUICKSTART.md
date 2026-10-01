@@ -17,7 +17,7 @@ pip install -e ".[dev]"
 llm-wiki --help
 ```
 
-Base use without the dev tools is `pip install -e .`. Optional local OCR is a separate extra, `pip install -e ".[ocr]"`, plus a local PaddlePaddle engine. It is not required for the commands below. See [EXTRACTION.md](EXTRACTION.md).
+Base use without the dev tools is `pip install -e .`. A published install is `pip install llm-wiki`. Optional local OCR is the `ocr` extra: `pip install -e ".[ocr]"` from this checkout, or `pip install "llm-wiki[ocr]"` for the published package. PaddlePaddle 3.x is a separate engine and is not installed by that extra. OCR is not required for the commands below. See [EXTRACTION.md](EXTRACTION.md).
 
 ## 2) Create a workspace
 

@@ -1,63 +1,53 @@
-# Release Checklist (v0.1.0)
+# Release Checklist (v0.2.0)
 
 ## Goal
 
-Ship a stable `v0.1.0` baseline for Phase 1 with reproducible checks, clear versioning, and traceable release notes.
+Prepare a `0.2.0` release candidate that can be installed from a wheel, tested without OCR models, and reviewed before any tag or PyPI publish.
+
+The candidate commit does not create the `v0.2.0` tag.
 
 ## Pre-Release Checks
 
-- Ensure workspace is clean of temporary ingest artifacts.
-- Confirm docs status is current:
-  - `docs/ROADMAP.md`
-  - `docs/MVP_SCOPE.md`
-  - `docs/PRD.md`
-- Run test suite:
-  - `pytest -q`
-- Run basic CLI smoke flow in a temporary directory outside this checkout. Do not initialize the framework repository as a knowledge base.
-  - `llm-wiki init -C temporary-directory`
-  - `llm-wiki ingest sample.md -C temporary-directory --extract`
-  - `llm-wiki list -C temporary-directory`
-  - `llm-wiki search "sample" -C temporary-directory`
-  - `llm-wiki check -C temporary-directory`
-  - `llm-wiki lint -C temporary-directory`
-  - `llm-wiki review list -C temporary-directory`
+- Confirm `pyproject.toml` and `src/llm_wiki/__init__.py` both say `0.2.0`.
+- Confirm the branch is `feat/generic-framework-v0.2` and `main` is untouched.
+- Run `pytest -q` from a checkout (`pip install -e ".[dev]"`). The suite must not download OCR models.
+- Build with `python -m build`. Do not commit `dist/`.
+- Install the wheel in a fresh virtualenv outside this repository and run `llm-wiki --help`.
+- In a temporary directory outside this checkout, run:
+  - `llm-wiki init`
+  - `llm-wiki ingest sample.md --extract`
+  - `llm-wiki list`
+  - `llm-wiki search "sample"`
+  - `llm-wiki check`
+  - `llm-wiki lint`
+  - `llm-wiki review list`
+- Do not initialize this framework checkout as a knowledge base.
+- Read [RELEASE_NOTES_v0.2.0.md](RELEASE_NOTES_v0.2.0.md) and [PRIVACY.md](PRIVACY.md).
 
-## Version Bump Guidance
-
-For `v0.1.0`, keep version values consistent in:
+## Version locations
 
 - `pyproject.toml` -> `[project].version`
 - `src/llm_wiki/__init__.py` -> `__version__`
 
-Update both from current value to:
+Bump rules after this candidate:
 
-- `0.1.0` for first stable Phase 1 baseline (already set)
-
-Future bump rules:
-
-- Patch (`0.1.x`): bug fixes, tests, docs, no CLI contract changes.
-- Minor (`0.x.0`): additive command flags/features without breaking existing behavior.
+- Patch (`0.2.x`): bug fixes, tests, docs, no CLI contract changes.
+- Minor (`0.x.0`): additive commands or flags without breaking existing behavior.
 - Major (`x.0.0`): breaking CLI or schema contract changes.
 
-## Release Notes Template
+## Included commands
 
-Use this structure for release notes/tag annotation:
+`init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`, `query`, `lint`, `review`.
 
-- Scope: Phase 1 CLI baseline
-- Included commands: `init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`, `query`, `lint`
-- Validation: tests passing and smoke checks passing
-- Out of scope reminder: no DB/vector/graph/agent-memory runtime in Phase 1
+## Not in this version
 
-## Tagging and Publish Steps
+Image-only DOCX/PPTX OCR, MCP, vector or semantic search, GBrain, Semantica, a review UI, and cloud storage. No license file is in the repository yet.
 
-If using git tags:
+## Tag and publish
 
-1. Confirm tests and smoke checks pass.
-2. Commit all intended changes.
-3. Create annotated tag:
-   - `git tag -a v0.1.0 -m "Phase 1 CLI baseline"`
-4. Push commit and tag:
-   - `git push`
-   - `git push origin v0.1.0`
+Do these only after the candidate is accepted. They are not part of the candidate commit.
 
-If not publishing yet, keep this as an internal readiness checklist.
+1. Open the pull request and merge.
+2. Create the annotated tag `v0.2.0`.
+3. Push the tag.
+4. Publish to PyPI only as a separate decision.

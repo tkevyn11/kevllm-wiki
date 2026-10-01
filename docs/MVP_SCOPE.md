@@ -7,6 +7,7 @@ Deliver a small, reliable CLI knowledge library for a solo builder. The MVP must
 ## Current MVP Status
 
 - Phase 1 command surface is implemented: `init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`, `query`, `lint`.
+- v0.2.0 adds `review`, `ingest --extract`, and optional `ingest --extract --ocr`. Those are in the release candidate. See [RELEASE_NOTES_v0.2.0.md](RELEASE_NOTES_v0.2.0.md).
 - Core automated tests are in place and passing for happy-path and failure-path validation checks.
 - Hardening objectives are completed (error handling and stable exit codes standardized).
 

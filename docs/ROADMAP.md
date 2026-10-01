@@ -8,9 +8,9 @@ Phase 1 is intentionally narrow: deliver a robust local CLI workflow around mark
 
 ## Current Status
 
-- **Current stage**: Phase 1 implemented and hardened.
-- **Milestones completed**: Milestone 1 through Milestone 6.
-- **Next stage**: Phase 1 maintenance and optional refactor cleanup before Phase 2 planning.
+- **Current stage**: `0.2.0` release candidate on `feat/generic-framework-v0.2`. Not merged and not tagged.
+- **Milestones completed**: Phase 1 milestones 1 through 6, plus the v0.2 framework work below.
+- **Next stage**: owner review, then the pull request, merge, and tag. That step is separate from this candidate.
 
 ### Milestone 1: Foundation
 
@@ -56,11 +56,22 @@ Phase 1 is intentionally narrow: deliver a robust local CLI workflow around mark
 - Add CLI error handling and stable exit codes.
 - Finalize docs for usage and maintenance.
 
+## v0.2.0 framework work
+
+Status: implemented on the release-candidate branch. See [RELEASE_NOTES_v0.2.0.md](RELEASE_NOTES_v0.2.0.md).
+
+- Quality-gated `ingest --extract` for text, Markdown, PDF, DOCX, and PPTX.
+- Optional local OCR for images and scanned PDFs (`ingest --extract --ocr`).
+- Explicit `review list/show/approve/reject`. `review` text stays out of `wiki/` until approval.
+- Nested `wiki/` notes in list, search, open, query, check, lint, and link.
+- `init` refuses this package checkout unless `--allow-framework-root` is set.
+- Graphify output path is `derived/graphify/` when that optional tool is run. It is not a CLI dependency.
+
 ## Phase 2: GBrain-Inspired Intelligence Layer (Future)
 
 - Add optional intelligence services that sit on top of the Phase 1 markdown corpus.
 - Keep markdown files in `wiki/` as canonical long-term source of truth.
 - Evaluate advanced retrieval and reasoning features as optional modules, not core storage.
-- When scoping Phase 2, evaluate external tooling candidates such as [Graphify](https://github.com/safishamsi/graphify) and [Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract) (see [FUTURE_PHASE_2.md](FUTURE_PHASE_2.md)); no Phase 1 dependency.
+- When scoping Phase 2, evaluate external tooling candidates such as [Graphify](https://github.com/safishamsi/graphify) and [Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract) (see [FUTURE_PHASE_2.md](FUTURE_PHASE_2.md)). Graphify is already an optional navigation tool writing `derived/graphify/`. It is not required to install or run llm-wiki.
 
 See [FUTURE_PHASE_2.md](FUTURE_PHASE_2.md) for scope boundaries and future directions.
