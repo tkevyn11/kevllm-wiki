@@ -45,7 +45,8 @@ Phase 1 is intentionally narrow: deliver a robust local CLI workflow around mark
 
 - Status: Completed
 - Implement `llm-wiki link` for bidirectional note relations.
-- Implement `llm-wiki summarize` with local default behavior and optional LLM backend.
+- Implement `llm-wiki summarize` with local heuristic behavior. Non-local mode exits 2.
+- Implement `llm-wiki query` and `llm-wiki lint` on the same local corpus.
 - Improve output formatting and command help text.
 
 ### Milestone 6: Hardening

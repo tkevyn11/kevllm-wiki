@@ -35,19 +35,18 @@ Personal research material often ends up fragmented across files and folders wit
 ### FR-1: Initialize Library
 
 - Command: `llm-wiki init`
-- Creates `raw/`, `wiki/`, `work/`, and `docs/` if missing.
-- Generates minimal starter files:
-  - `wiki/index.md`
-  - `wiki/log.md`
-- Must be safe to re-run (idempotent).
+- Creates `raw/`, `wiki/`, `work/`, `docs/`, and `schema/` if missing.
+- Generates starter files when absent: `wiki/index.md`, `wiki/log.md`, `schema/SCHEMA.md`, `schema/CLAUDE.md`.
+- Must be safe to re-run and must not overwrite those files.
 
 ### FR-2: Ingest Raw Materials
 
 - Command: `llm-wiki ingest <input>`
-- Supports local file and directory inputs in Phase 1.
-- Captures ingest manifest entries in `work/`.
-- Records source attribution in resulting notes.
-- Never mutates original source files.
+- Supports local file and directory inputs. Directories are copied by basename. URLs are not fetched.
+- Captures ingest manifest entries in `work/`, including the absolute local input path.
+- Records source attribution on a new note.
+- Does not mutate the original file outside the library.
+- Does not rewrite an existing note. A filename or id collision creates a suffixed raw copy and note id.
 
 ### FR-3: Create Structured Notes
 
@@ -71,15 +70,15 @@ Personal research material often ends up fragmented across files and folders wit
 ### FR-6: Open Notes
 
 - Command: `llm-wiki open <id-or-path>`
-- Opens note in default system editor/viewer.
-- Supports resolution by note id and direct path.
+- Opens the note with the platform handler.
+- Resolves an existing filesystem path first, then `wiki/<argument>.md`, then frontmatter `id`.
 
 ### FR-7: Summarize Content
 
 - Command: `llm-wiki summarize <id-or-path>`
-- Default Phase 1 behavior is local heuristic summarization.
-- Optional LLM-backed summarization may be enabled via config/environment.
-- Core usage remains functional without cloud dependencies.
+- Behavior is local heuristic summarization.
+- Any `--mode` other than `local` exits `2`. No LLM adapter is configured.
+- `--write` updates `## Summary` without dropping other sections.
 
 ### FR-8: Validate Library Consistency
 
@@ -87,6 +86,27 @@ Personal research material often ends up fragmented across files and folders wit
 - Validates frontmatter schema compliance.
 - Detects broken internal links.
 - Detects missing required metadata and duplicate note ids.
+- `http://`, `https://`, and `mailto:` links are not reported as broken files.
+
+### FR-9: Link Notes
+
+- Command: `llm-wiki link`
+- Default relation key is `related`, written on both notes.
+- `--no-bidirectional` updates only the from-note. `--relation` stores a different frontmatter key.
+- Repeating a link does not duplicate the id.
+
+### FR-10: Query Notes
+
+- Command: `llm-wiki query`
+- Local term overlap over existing notes, skipping type `query`.
+- Prints citations. `--save` writes a `query-*` note. Without `--save`, nothing is written.
+- Does not call an external model.
+
+### FR-11: Lint Notes
+
+- Command: `llm-wiki lint`
+- Same structural failures as `check` (exit `3`, warnings suppressed).
+- Otherwise warns about notes with no inbound `related` link and notes missing `## Summary`, and exits `0`.
 
 ## Quality Requirements
 
@@ -103,7 +123,7 @@ Personal research material often ends up fragmented across files and folders wit
 
 ## Success Criteria (Phase 1)
 
-- A user can initialize, ingest, list, search, open, summarize, and check a library entirely via CLI.
+- A user can initialize, ingest, list, search, open, summarize, link, check, query, and lint a library entirely via CLI.
 - All notes are valid markdown files with inspectable metadata.
 - The system remains understandable for a solo maintainer.
 
@@ -112,7 +132,7 @@ Personal research material often ends up fragmented across files and folders wit
 - **Overall phase**: Phase 1.
 - **Current milestone**: Milestone 6 completed.
 - **Status summary**:
-  - Core command surface is implemented (`init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`).
+  - Command surface is implemented (`init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`, `query`, `lint`).
   - Automated tests are implemented and passing for both core flows and key failure paths.
   - CLI error handling and stable exit code behavior are standardized.
   - Remaining work is optional maintenance/refactor work, not MVP blocking scope.
@@ -127,3 +147,6 @@ Personal research material often ends up fragmented across files and folders wit
 - FR-6 Open Notes: Completed
 - FR-7 Summarize Content: Completed (local mode)
 - FR-8 Validate Library Consistency: Completed
+- FR-9 Link Notes: Completed
+- FR-10 Query Notes: Completed (local selection, not an external model)
+- FR-11 Lint Notes: Completed

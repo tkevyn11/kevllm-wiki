@@ -6,7 +6,7 @@ Deliver a small, reliable CLI knowledge library for a solo builder. The MVP must
 
 ## Current MVP Status
 
-- Phase 1 command surface is implemented: `init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`.
+- Phase 1 command surface is implemented: `init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`, `query`, `lint`.
 - Core automated tests are in place and passing for happy-path and failure-path validation checks.
 - Hardening objectives are completed (error handling and stable exit codes standardized).
 
@@ -29,6 +29,10 @@ Deliver a small, reliable CLI knowledge library for a solo builder. The MVP must
   - `llm-wiki link`
 - Consistency validation:
   - `llm-wiki check`
+- Local question answering over existing notes:
+  - `llm-wiki query`
+- Structural checks plus health warnings:
+  - `llm-wiki lint`
 
 ## Out of Scope (Phase 1)
 

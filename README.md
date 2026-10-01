@@ -2,13 +2,13 @@
 
 LLM-Wiki is a local-first, CLI-first personal knowledge library that keeps markdown files as the long-term source of truth. Phase 1 focuses on a narrow, practical workflow: initialize a library, ingest materials, create and maintain structured notes, and query the wiki from the terminal without introducing heavy infrastructure.
 
-Karpathy-style layering is explicitly supported: `raw/` + `wiki/` + `schema/`.
+Karpathy-style layering is explicitly supported: `raw/` + `wiki/` + `schema/`, with transient `work/` and rebuildable `derived/`. User notes belong in a separate workspace, not in this Git history. See [docs/PRIVACY.md](docs/PRIVACY.md).
 
 LLM maintainer rules are provided via `CLAUDE.md` (root) and `schema/CLAUDE.md`.
 
 ## Phase 1 Scope
 
-- Markdown and filesystem are canonical (`raw/`, `wiki/`, `schema/`, with `work/` for operational artifacts).
+- Markdown in `wiki/` is canonical. `raw/` stores source copies, `work/` is transient, and `derived/` is rebuildable output.
 - CLI is the primary interface (`llm-wiki`).
 - Search is local keyword search over markdown notes.
 - Notes use markdown plus YAML frontmatter.
@@ -28,10 +28,11 @@ See [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md).
 
 ## Folder Philosophy
 
-- `raw/`: original source materials.
-- `wiki/`: structured markdown knowledge base.
+- `raw/`: source material and provenance copies. May be private.
+- `wiki/`: canonical markdown knowledge base.
+- `work/`: transient processing files and manifests.
+- `derived/`: rebuildable graph, vector, semantic, and extraction outputs. Never canonical.
 - `schema/`: workflow conventions and note schema contract.
-- `work/`: temporary processing files and manifests.
 - `docs/`: product, architecture, and specification documents.
 
 ## Optional Integrations (Phase 1 Compatible)
@@ -44,7 +45,7 @@ These are optional helpers that fit the Phase 1 architecture. They are not requi
 - **Marp**: optional presentation output from selected markdown notes.
 - **Dataview**: optional frontmatter querying for local browsing/reporting.
 
-## Planned CLI Commands
+## CLI Commands
 
 - `init`
 - `ingest`
@@ -54,18 +55,27 @@ These are optional helpers that fit the Phase 1 architecture. They are not requi
 - `summarize`
 - `link`
 - `check`
+- `query`
+- `lint`
 
-Details are defined in [docs/CLI_SPEC.md](docs/CLI_SPEC.md).
+Details and the behavior locked by tests are in [docs/CLI_SPEC.md](docs/CLI_SPEC.md).
 
-## Conceptual Quickstart
+## Quickstart
 
-After CLI implementation lands, the expected flow is:
+Install this package, then initialize a separate folder:
 
-1. `llm-wiki init`
-2. `llm-wiki ingest <path-or-url>`
-3. `llm-wiki list`
-4. `llm-wiki search "<keyword>"`
-5. `llm-wiki check`
+```bash
+pip install -e .
+mkdir my-knowledge
+cd my-knowledge
+llm-wiki init
+llm-wiki ingest path/to/sample-paper.md
+llm-wiki list
+llm-wiki search "distributed systems"
+llm-wiki check
+```
+
+See [docs/QUICKSTART.md](docs/QUICKSTART.md).
 
 ## Documentation Map
 
@@ -82,4 +92,5 @@ After CLI implementation lands, the expected flow is:
 - Folder structure: [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md)
 - Decision record: [docs/DECISIONS.md](docs/DECISIONS.md)
 - Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
+- Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
 - Future phase: [docs/FUTURE_PHASE_2.md](docs/FUTURE_PHASE_2.md)

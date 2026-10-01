@@ -14,7 +14,8 @@
 
 - **Filesystem**: `pathlib` (standard library)
 - **Metadata parsing**: `PyYAML` for frontmatter blocks
-- **Text processing**: standard library (`re`, `datetime`, `json`, `textwrap`)
+- **Declared readers**: `pypdf` for PDF text, `python-docx` for DOCX text. `python-pptx` is declared in `pyproject.toml` and is not called by the current reader.
+- **Text processing**: standard library (`re`, `datetime`, `json`)
 - **Command execution/open behavior**: `os`, `subprocess`, `webbrowser`, platform-specific helpers
 
 ## Search Approach
@@ -38,9 +39,10 @@
 ## Storage Model
 
 - Local filesystem only in Phase 1:
-  - `raw/` for original sources
-  - `wiki/` for structured markdown notes
-  - `work/` for temporary artifacts and ingest manifests
+  - `raw/` for source copies
+  - `wiki/` for canonical markdown notes
+  - `work/` for transient artifacts and ingest manifests
+  - `derived/` reserved for rebuildable indexes and extracts (not written by the core CLI yet)
 
 ## External Dependencies Policy
 

@@ -14,6 +14,8 @@ Phase 1 CLI baseline.
 - `summarize`
 - `link`
 - `check`
+- `query`
+- `lint`
 
 ## Validation
 

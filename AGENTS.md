@@ -8,14 +8,16 @@ Wiki maintenance rules live in **`schema/CLAUDE.md`** and **`schema/SCHEMA.md`**
 
 - Never modify files under **`raw/`**.
 - Canonical notes live in **`wiki/`** (markdown + frontmatter). After wiki changes, update **`wiki/index.md`** and append **`wiki/log.md`**.
-- **Graphify** outputs are **derived only** (navigation, structure, questions). Do not treat `work/graphify-out/` as a source of truth for factual claims; cite **`raw/`** and wiki notes instead.
+- **`work/`** is transient. **`derived/`** is rebuildable. Neither is a source of truth.
+- Do not commit secrets, `.env` files, or a user's real `raw/`, `wiki/`, `work/`, or `derived/` content. See **`docs/PRIVACY.md`**.
+- **Graphify** outputs are **derived only** (navigation, structure, questions). The skill currently writes `work/graphify-out/`. Do not treat that, or anything under `derived/`, as a source of truth for factual claims; cite **`raw/`** and wiki notes instead.
 
 ## CLI
 
 - Install: `pip install -e ".[dev]"` (from repo root).
 - Entry point: **`llm-wiki`** — see `llm-wiki --help` or `python -m llm_wiki.cli --help` after install.
 - Tests: `python -m pytest` (prefer over bare `pytest` if scripts are not on `PATH`).
-- If Codex’s shell cannot find `python`, use the full path to your `python.exe` or fix Windows **PATH**, then restart Codex.
+- If the agent shell cannot find `python`, invoke the interpreter used to create the virtualenv (for example `.venv/bin/python` or `.venv\Scripts\python.exe`).
 
 ## Karpathy guidelines (repo skill)
 
@@ -25,7 +27,7 @@ Coding discipline (think first, minimal code, surgical diffs, verify goals) live
 
 - Install package: `pip install graphifyy` or `pip install -e ".[graphify]"`.
 - In Codex, invoke the repo skill explicitly: **`$graphify`** (implicit invocation is disabled for this project).
-- Run pipeline steps from **`work/`** so outputs land in **`work/graphify-out/`**; use input paths `../raw` and/or `../wiki` relative to `work/`.
+- Run pipeline steps from **`work/`** so outputs land in **`work/graphify-out/`**; use input paths `../raw` and/or `../wiki` relative to `work/`. Those outputs stay non-canonical. The documented long-term directory for rebuildable indexes is **`derived/`**; the skill has not been moved there.
 
 ## Superpowers (recommended)
 

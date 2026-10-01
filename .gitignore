@@ -28,7 +28,41 @@ graphify-out/
 .graphify_ast.json
 .graphify_old.json
 
-# Private library content (local only — do not push notes/sources/manifests)
+# Private library content at the repo root (local only — do not push notes/sources/manifests).
+# Root-anchored so a later examples/ tree can still commit synthetic fixtures.
 /raw/
 /wiki/
 /work/
+
+# Rebuildable graph, vector, semantic, and extraction outputs. Never canonical.
+/derived/
+
+# Secrets and credentials. Never commit these.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+credentials.json
+credentials.yml
+credentials.yaml
+secrets.json
+auth.json
+cookies.json
+
+# Local databases and vector caches
+*.sqlite
+*.sqlite3
+*.db
+
+# Editor and OS local state
+.vscode/
+.idea/
+.cursor/
+*.swp
+Thumbs.db
+.DS_Store

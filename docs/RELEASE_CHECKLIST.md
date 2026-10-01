@@ -40,7 +40,7 @@ Future bump rules:
 Use this structure for release notes/tag annotation:
 
 - Scope: Phase 1 CLI baseline
-- Included commands: `init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`
+- Included commands: `init`, `ingest`, `list`, `search`, `open`, `summarize`, `link`, `check`, `query`, `lint`
 - Validation: tests passing and smoke checks passing
 - Out of scope reminder: no DB/vector/graph/agent-memory runtime in Phase 1
 

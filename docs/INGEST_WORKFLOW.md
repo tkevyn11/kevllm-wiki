@@ -7,29 +7,28 @@ Define a predictable, local ingest process that transforms raw materials into st
 ## Inputs
 
 - Local files (single item)
-- Local directories (batch)
-- Optional URL references (recorded as metadata; retrieval behavior can be added later)
-- Web-clipped markdown files (treated as standard local files)
-- Local image assets (for example under `raw/assets/`)
+- Local directories (recursive batch)
+- Web-clipped markdown files saved on disk (treated as ordinary local files)
+- The CLI does not fetch URLs
 
 ## Workflow Steps
 
 1. **Acquire source**
-   - User provides file path, directory path, or URL metadata.
-   - For PDF-heavy workflows, keep originals under `raw/original/`.
-   - Optionally preprocess PDFs into markdown/text and save outputs under `raw/processed/`.
+   - User provides a local file or directory path.
+   - Text-like files are read directly. PDF text uses `pypdf` when that import works. DOCX text uses `python-docx` when that import works.
 2. **Register ingest**
-   - CLI appends entry to `work/ingest-manifest.jsonl`.
-   - Manifest captures timestamp, input reference, and status.
+   - CLI appends one JSON object per file to `work/ingest-manifest.jsonl`.
+   - `input` is the absolute local path. Treat the manifest as private.
 3. **Material placement**
-   - For files/directories, source is copied into `raw/` or indexed by stable reference according to ingest policy.
-   - Original source remains unchanged.
-   - For image-heavy clipped content, keep downloaded images local and preserve relative links where possible.
-4. **Note creation/update**
-   - Create new note or update existing note in `wiki/`.
-   - Ensure required frontmatter fields and source attribution are present.
+   - The source is copied into `raw/` by basename.
+   - A directory walk is recursive, but nested relative folders are not preserved.
+   - The file outside the library is not modified.
+   - If `raw/<basename>` already exists, the copy uses a `-2`, `-3`, ... suffix.
+4. **Note creation**
+   - Create a new note in `wiki/`. An existing note with the same id is not rewritten; the new id is suffixed the same way.
+   - Required frontmatter and source attribution are written on the new note.
    - Default ingest writes a `## Summary` section (`--summarize`).
-   - You can disable this with `--no-summarize`.
+   - `--no-summarize` skips that section.
 5. **Index and log updates**
    - `wiki/index.md` is updated with note reference.
    - `wiki/log.md` appends ingest event summary.
@@ -37,7 +36,7 @@ Define a predictable, local ingest process that transforms raw materials into st
    - With `--link-suggestions`, ingest proposes and writes related-note links.
    - With `--touch-related`, ingest also refreshes summaries for newly linked notes.
 7. **Validation**
-   - Run schema and link checks (implicitly or via explicit `llm-wiki check`).
+   - Ingest does not run `check` itself. Run `llm-wiki check` or `llm-wiki lint` afterward.
 
 ## Ingest Modes and When to Use Them
 
@@ -50,31 +49,24 @@ Define a predictable, local ingest process that transforms raw materials into st
 - `llm-wiki ingest <input> --no-summarize`
   - Use when source extraction quality is low and you prefer manual summary editing.
 
-## Recommended PDF Preprocessing Pattern (Optional)
+## PDF and Office Files
 
-For better search quality on PDF/doc-based workflows:
+Ingest can read text from a `.pdf` via `pypdf` and from a `.docx` via `python-docx` when those imports succeed. The extract is copied into the new note. There is no OCR step and no quality gate. If that text is poor, ingest a markdown or text export instead, or use `--no-summarize` and edit the note.
 
-1. Keep original files in `raw/original/`.
-2. Use an external parser (for example, `opendataloader-pdf`) to extract text/markdown.
-3. Save extracted outputs in `raw/processed/`.
-4. Ingest the processed text/markdown with `llm-wiki ingest`.
-5. Keep source attribution pointing to both original and processed artifacts when possible.
+## Re-ingest Behavior
 
-This keeps Phase 1 architecture unchanged while improving retrieval quality.
+Re-ingest does not update the existing note.
 
-## Idempotence Policy
-
-- Re-ingesting the same source should not produce duplicate note ids.
-- Re-ingest behavior:
-  - existing note may be updated
-  - manifest gets a new event record
-  - source attribution list can append a new `ingested_at` entry when appropriate
+- The first ingest of `sample-paper.md` creates `raw/sample-paper.md` and `wiki/sample-paper.md`.
+- A second ingest of the same filename creates `raw/sample-paper-2.md` and `wiki/sample-paper-2.md`.
+- The first note, including any manual edits, stays as it was.
+- The manifest gets a new event for the new note id.
 
 ## Human-in-the-Loop Expectations
 
-- User can review generated note content after each ingest.
-- Manual edits are first-class and preserved.
-- Ingest should prefer incremental updates over full rewrites.
+- Review the new note after ingest.
+- Edit `wiki/` directly. Later ingests of the same filename will not overwrite that file.
+- There is no quality gate yet. Weak extracts should be fixed in the note or ingested with `--no-summarize`.
 
 ## Manifest Example
 
@@ -82,8 +74,8 @@ This keeps Phase 1 architecture unchanged while improving retrieval quality.
 {
   "event": "ingest",
   "ingested_at": "2026-04-13T20:20:00Z",
-  "input": "raw/papers/attention-is-all-you-need.pdf",
+  "input": "/path/to/sample-paper.md",
   "status": "success",
-  "note_id": "transformer-attention"
+  "note_id": "sample-paper"
 }
 ```

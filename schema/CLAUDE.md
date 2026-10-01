@@ -10,10 +10,12 @@ The human curates sources, asks questions, and guides analysis.
 ## Layer structure
 
 ```
-raw/             -- source documents (immutable, never modify)
-wiki/            -- markdown pages maintained by the LLM
+raw/             -- source copies (immutable, may be private)
+wiki/            -- canonical markdown pages
 wiki/index.md    -- content index / table of contents
 wiki/log.md      -- append-only operation log
+work/            -- transient manifests and logs (not canonical)
+derived/         -- rebuildable indexes and extracts (not canonical)
 schema/          -- maintainer instructions and schema rules
 ```
 
@@ -21,8 +23,10 @@ schema/          -- maintainer instructions and schema rules
 
 When the user asks to ingest new sources:
 
+The `llm-wiki ingest` command copies sources by basename and creates a new note. If the note id already exists, it writes a suffixed id and does not rewrite the existing note. Agents may still update an existing page when the user asks for an edit.
+
 1. Read source material (or extracted text when available).
-2. Create or update a source summary page in `wiki/`.
+2. Create or update a source summary page in `wiki/` when the user wants that page changed. Do not expect `ingest` itself to patch an existing note.
 3. Create or update related concept/entity pages when relevant.
 4. Add links between related pages.
 5. Update `wiki/index.md` with one-line descriptions.
