@@ -8,7 +8,7 @@ Phase 1 is intentionally narrow: deliver a robust local CLI workflow around mark
 
 ## Current Status
 
-- **Current stage**: kevllm-wiki v0.2.0. License: MIT.
+- **Current stage**: kevllm-wiki v0.2.0. Generic Framework MVP — COMPLETE. License: MIT.
 - **Milestones completed**: Phase 1 milestones 1 through 6, plus the v0.2 framework work below.
 - **Next stage**: optional later work only. Phase 2 is not part of v0.2.0.
 
