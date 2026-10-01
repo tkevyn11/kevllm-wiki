@@ -57,6 +57,7 @@ These are optional helpers that fit the Phase 1 architecture. They are not requi
 - `check`
 - `query`
 - `lint`
+- `review`
 
 Details and the behavior locked by tests are in [docs/CLI_SPEC.md](docs/CLI_SPEC.md).
 

@@ -52,6 +52,16 @@ llm-wiki query "distributed systems"
 
 `open` uses an existing filesystem path before a note id. `summarize` is local only. `query` prints a citation-backed answer from notes already in `wiki/`.
 
+Extracts that the quality gate marks `review` stay out of `wiki/` until you accept them:
+
+```bash
+llm-wiki ingest path/to/short-note.txt --extract
+llm-wiki review list
+llm-wiki review approve <review-id>
+```
+
+`llm-wiki review reject <review-id>` records a refusal and does not create a note.
+
 The library flag is uppercase `-C` / `--library`. `-c` is not accepted.
 
 ## If something fails

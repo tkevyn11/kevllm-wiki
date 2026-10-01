@@ -67,7 +67,7 @@ Re-ingest does not update the existing note.
 - Review the new note after ingest.
 - Edit `wiki/` directly. Later ingests of the same filename will not overwrite that file.
 - Without `--extract`, ingest still creates a note for every file and does not run the quality gate. Weak extracts should be fixed in the note or ingested with `--no-summarize`.
-- `llm-wiki ingest <input> --extract` runs the local quality gate. Only `clean` results become wiki notes. `review` stays under `derived/extraction/text/` and is not promoted automatically.
+- `llm-wiki ingest <input> --extract` runs the local quality gate. Only `clean` results become wiki notes. `review` stays under `derived/extraction/text/` until `llm-wiki review approve`.
 - `llm-wiki ingest <input> --extract --ocr` adds optional local OCR for images and scanned PDFs. The OCR text still has to pass the quality gate. See [EXTRACTION.md](EXTRACTION.md).
 
 ## Manifest Example

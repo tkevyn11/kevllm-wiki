@@ -20,8 +20,8 @@ This file describes the behavior locked by the characterization tests on `feat/g
 - `0`: success, including empty `list` and `search` results
 - `1`: reserved for unexpected runtime failure (not returned by the commands below)
 - `2`: invalid arguments, missing ingest input, unsupported summarize mode, a query with no usable terms, `--ocr` without `--extract`, or `--ocr` when the optional local OCR packages are not installed
-- `3`: validation failure from `check` or `lint`, or a `--extract` batch that contains `reject` or `error`
-- `4`: target not found (note id or path not resolved)
+- `3`: validation failure from `check` or `lint`, a `--extract` batch that contains `reject` or `error`, or a review decision that conflicts with stored metadata
+- `4`: target not found (note id, path, or review id not resolved)
 
 ## Command: `init`
 
@@ -226,3 +226,27 @@ Run structural checks and health warnings.
 - Uses the same structural rules as `check`, including `--strict`.
 - Structural failures exit `3` and do not print warnings.
 - When structure is valid, warnings exit `0`. Current warnings: a note with no inbound `related` link, and a note whose body has no `## Summary` section.
+
+## Command: `review`
+
+Promote or refuse extracts whose quality status is `review`. This does not change `ingest`.
+
+### Usage
+
+```bash
+llm-wiki review list [--library PATH]
+llm-wiki review show <review-id> [--library PATH]
+llm-wiki review approve <review-id> [--library PATH]
+llm-wiki review reject <review-id> [--library PATH]
+```
+
+### Behavior
+
+- Pending items come from `derived/extraction/manifests/extraction.json` entries with status `review` that have no decision yet.
+- The review id is derived from the workspace-relative source path and the source sha256. It is not a filesystem path.
+- `review list` prints pending items only. With none, it prints `No pending review items.` and exits `0`.
+- `review show` prints source-relative provenance, status, OCR fields when OCR was used, and the extracted text. It does not change files.
+- `review approve` checks the raw copy's sha256, re-runs the quality gate, and writes one wiki note when the text is still readable. The note uses `extraction_status: reviewed`. An existing note id is not overwritten; the next free `-2` id is used.
+- `review reject` writes no note. The raw copy and the extracted text stay in place.
+- Decisions are appended to `derived/extraction/manifests/review.jsonl` with relative paths and the source sha256. Repeating the same decision exits `0` and does not create another note. The opposite decision exits `3`.
+- A missing review id exits `4`. Unreadable metadata, a source-hash mismatch, or text that fails the quality gate exits `3`.

@@ -45,6 +45,7 @@ derived/   rebuildable indexes and extraction output (not canonical)
 | `check` | Validate required fields, duplicate ids, related ids, and broken markdown links. |
 | `query` | Print a local answer from matching notes, with citations. `--save` writes a `query-*` note. |
 | `lint` | Same structural checks as `check`, plus warnings for orphan notes and missing summaries. |
+| `review` | List, show, approve, or reject `review` extracts. Approval is the only way those extracts become notes. |
 
 `index.md` and `log.md` are not listed as notes. Notes in subfolders of `wiki/` are not included by the current lister.
 
@@ -56,7 +57,16 @@ llm-wiki ingest path/to/folder --no-summarize
 llm-wiki ingest path/to/sample-paper.md --extract
 ```
 
-Without `--extract`, every file becomes a note. With `--extract`, only a `clean` local extract becomes a note. Short or uncertain extracts stay in `derived/extraction/` for review and are not promoted automatically. Images and textless PDFs stay `ocr_needed` unless you also pass `--ocr`. That flag runs optional local OCR, then the same quality gate. `reject` and `error` finish the batch and then exit `3`. See [EXTRACTION.md](EXTRACTION.md).
+Without `--extract`, every file becomes a note. With `--extract`, only a `clean` local extract becomes a note. Short or uncertain extracts stay in `derived/extraction/` until you approve them:
+
+```bash
+llm-wiki review list
+llm-wiki review show <review-id>
+llm-wiki review approve <review-id>
+llm-wiki review reject <review-id>
+```
+
+Images and textless PDFs stay `ocr_needed` unless you also pass `--ocr`. That flag runs optional local OCR, then the same quality gate. `reject` and `error` finish the batch and then exit `3`. See [EXTRACTION.md](EXTRACTION.md).
 
 - Directory ingest is recursive. Each file is copied by its basename into `raw/`, not by its relative path.
 - The original file outside the library is not modified.

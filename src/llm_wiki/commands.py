@@ -701,6 +701,78 @@ def _keyword_terms(text: str) -> list[str]:
     return [t for t in re.findall(r"[a-z0-9]+", (text or "").lower()) if len(t) >= 4 and t not in stop]
 
 
+def cmd_review_list(library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, pending_review_items
+
+    root = library_root(library)
+    try:
+        items = pending_review_items(root)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    if not items:
+        typer.echo("No pending review items.")
+        return
+    for item in items:
+        ocr = "yes" if item.ocr_used else "no"
+        typer.echo(
+            f"{item.review_id}  source={item.source_relative}  type={item.file_type}  "
+            f"chars={item.text_chars}  at={item.created_at}  ocr={ocr}"
+        )
+
+
+def cmd_review_show(item: str, library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, show_review_item
+
+    root = library_root(library)
+    try:
+        found, text = show_review_item(root, item)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    lines = [
+        f"review_id: {found.review_id}",
+        f"source_relative: {found.source_relative}",
+        f"status: {found.status}",
+        f"file_type: {found.file_type}",
+        f"text_chars: {found.text_chars}",
+        f"sha256: {found.sha256}",
+        f"ocr_used: {'true' if found.ocr_used else 'false'}",
+    ]
+    if found.ocr_used:
+        lines.append(f"ocr_provider: {found.ocr_provider}")
+        lines.append(f"ocr_pages: {found.ocr_pages}")
+    typer.echo("\n".join(lines))
+    typer.echo("")
+    typer.echo(text.rstrip())
+
+
+def cmd_review_approve(item: str, library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, approve_review_item
+
+    root = library_root(library)
+    try:
+        note_id, outcome = approve_review_item(root, item)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    if outcome == "already":
+        typer.echo(f"Already approved: {item}")
+        return
+    typer.echo(f"Approved: created note {note_id}")
+
+
+def cmd_review_reject(item: str, library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, reject_review_item
+
+    root = library_root(library)
+    try:
+        outcome = reject_review_item(root, item)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    if outcome == "already":
+        typer.echo(f"Already rejected: {item}")
+        return
+    typer.echo(f"Rejected: {item}")
+
+
 def _touch_related_notes(root: Path, related_ids: list[str]) -> list[str]:
     refreshed: list[str] = []
     for rid in related_ids:

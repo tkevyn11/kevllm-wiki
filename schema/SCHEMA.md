@@ -33,7 +33,8 @@ Optional:
 - Ingest without `--extract` copies source files into `raw/` by basename.
 - Ingest without `--extract` creates a new note in `wiki/`. If that id already exists, the new note id is suffixed (`-2`, `-3`, ...) and the existing note is not rewritten.
 - `llm-wiki ingest --extract` keeps relative paths under `raw/`, runs the local quality gate, and creates a wiki note only for status `clean`. Other statuses stay out of `wiki/`.
-- `llm-wiki ingest --extract --ocr` runs optional local OCR for images and textless PDFs, then the same quality gate. `review` is not promoted automatically. Without `--ocr`, those files stay `ocr_needed`.
+- `llm-wiki ingest --extract --ocr` runs optional local OCR for images and textless PDFs, then the same quality gate. Without `--ocr`, those files stay `ocr_needed`.
+- A `review` extract stays in `derived/` until `llm-wiki review approve`. `llm-wiki review reject` records the refusal and does not create a note. Ingest does not approve review items on its own.
 - Default ingest writes `## Summary`.
 - Ingest updates `wiki/index.md` and appends `wiki/log.md`.
 - Optional flags:

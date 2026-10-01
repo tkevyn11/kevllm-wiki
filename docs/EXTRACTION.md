@@ -86,11 +86,29 @@ llm-wiki ingest path/to/scan.pdf --extract --ocr
 
 OCR stays off unless both flags are present. `--ocr` alone exits 2. If the packages are missing, the command exits 2 and prints the install lines. It does not pretend the file was skipped.
 
-The flow is: copy into `raw/`, detect the file, OCR images and textless PDFs locally, normalize the text, then run the same Unicode quality gate. `clean` becomes a note. `review` stays in `derived/extraction/text/`. Short, noisy, or failed OCR does not become a note. There is no promote or `--include-review` flag.
+The flow is: copy into `raw/`, detect the file, OCR images and textless PDFs locally, normalize the text, then run the same Unicode quality gate. `clean` becomes a note. `review` stays in `derived/extraction/text/` until `llm-wiki review approve`. Short or noisy OCR text is not auto-promoted. Ingest has no `--auto-approve-review` flag.
 
 Scanned PDFs are rendered in memory or a temporary file with PyMuPDF and recognized page by page. The extract keeps `## Page N` headings. Poppler is not required. DOCX and PPTX files with no text layer are still `ocr_needed`.
 
 The first run can download model weights, so setup may use the network. After those weights are cached, OCR can run offline. The document or image is not sent to an OCR API. Manifests may name the provider (`paddleocr`) and the page count. They do not store cache directories, usernames, or absolute paths.
+
+## Review and promotion
+
+```text
+source
+  ↓
+ingest --extract [--ocr]
+  ↓
+clean ───────────────→ wiki/
+review ──→ review list/show ──→ approve ──→ wiki/
+                         └────→ reject
+ocr_needed / skip / reject / error
+  └──────────────────────────→ no canonical note
+```
+
+`wiki/` is canonical. `derived/` stays rebuildable and is not canonical. A `review` extract becomes a note only after `llm-wiki review approve`. `llm-wiki review reject` records the refusal and leaves `wiki/` unchanged. Both decisions are appended to `derived/extraction/manifests/review.jsonl` using the review id, the source-relative path, and the source sha256. No cloud service is involved.
+
+Approval checks that the `raw/` copy still matches the recorded sha256, reads the extracted text, and runs the quality gate again. Readable short text can be approved. Empty or noisy text cannot. The new note keeps the usual required frontmatter and sets `extraction_status: reviewed`. Approving or rejecting the same item again does not create a second note.
 
 ## Entry point
 

@@ -32,6 +32,8 @@ Graphify, semantic indexes, MCP caches, and future cloud or LLM integrations are
 
 `llm-wiki ingest --extract --ocr` is also local. It does not upload the image or PDF to an OCR service. Installing PaddleOCR and its model weights can use the network once. After the weights are cached, recognition can run offline. OCR manifests record the provider name and page count, not a model-cache path.
 
+`llm-wiki review` is local as well. Approval and rejection events live in `derived/extraction/manifests/review.jsonl` and store a review id, a source-relative path, and a sha256. They do not store absolute paths or model-cache directories.
+
 ## User libraries
 
 Keep a user workspace in a separate folder from this framework checkout. See [USER_GUIDE.md](USER_GUIDE.md). That folder is your data. This Git repository should not track it.
