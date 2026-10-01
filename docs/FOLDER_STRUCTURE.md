@@ -34,7 +34,7 @@ llm-wiki init
 
 `init` does not create `derived/`. That directory is the contract for later graph, vector, semantic, and extraction output. It is gitignored at the framework repo root so a local experiment there is not committed by accident. `init` will not overwrite starter files that already exist.
 
-Running `init` in the framework checkout also works, because `--library` defaults to the current directory. That mixes user data with package source. Prefer a separate workspace.
+`init` refuses to run in this framework checkout (the directory that contains this package's `pyproject.toml` and `src/llm_wiki/`). Use a separate folder. Maintainers can pass `--allow-framework-root` when they intentionally want starter files inside the checkout.
 
 ## Runtime layers
 
@@ -43,7 +43,7 @@ Running `init` in the framework checkout also works, because `--library` default
 - `work/` is transient. `ingest-manifest.jsonl` can contain absolute local paths.
 - `derived/` is rebuildable and never canonical. Optional tools (Graphify, semantic indexes, MCP caches) must not replace `wiki/`.
 
-The current Graphify skill still writes `work/graphify-out/` when you run it from `work/`. Those files are derived navigation, not a second source of truth. Moving that output under `derived/` is later work.
+Graphify writes rebuildable navigation under `derived/graphify/`. Those files are not a second source of truth. `wiki/` may contain nested note folders; retrieval and validation commands see those notes.
 
 ## Framework directories
 

@@ -17,7 +17,7 @@ dist/
 venv/
 env/
 
-# Graphify derived outputs (run from work/ → work/graphify-out/)
+# Older Graphify runs. The current target is derived/graphify/, already covered by /derived/.
 work/graphify-out/
 # Accidental run from repo root
 /graphify-out/

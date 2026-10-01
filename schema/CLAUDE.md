@@ -77,7 +77,7 @@ When answering questions:
 
 ## Graphify (optional)
 
-When a **Graphify** graph exists under `work/graphify-out/`, you may use `GRAPH_REPORT.md` or `graph.json` for **navigation** (communities, cross-links, suggested questions). Do **not** treat the graph as a citation source; ground answers in `wiki/` notes and `raw/` sources. Invoke Graphify only when the user asks or via explicit `$graphify` in Codex; run pipeline steps from `work/` with inputs `../raw` and/or `../wiki` so outputs stay under `work/graphify-out/`.
+When a **Graphify** graph exists under `derived/graphify/`, you may use `GRAPH_REPORT.md` or `graph.json` for **navigation** (communities, cross-links, suggested questions). Do **not** treat the graph as a citation source; ground answers in `wiki/` notes and `raw/` sources. Invoke Graphify only when the user asks or via explicit `$graphify` in Codex; run pipeline steps from the library root with inputs `raw/` and/or `wiki/` so outputs stay under `derived/graphify/`.
 
 ## Lint workflow
 

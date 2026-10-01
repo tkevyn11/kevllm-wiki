@@ -37,7 +37,7 @@ derived/   rebuildable indexes and extraction output (not canonical)
 |---|---|
 | `init` | Create the library folders and starter files if missing. |
 | `ingest` | Copy a local file or directory into `raw/` and create a new note. |
-| `list` | List top-level `wiki/*.md` notes. Optional `--type`, `--tag`, and `--json`. |
+| `list` | List canonical `wiki/**/*.md` notes, including nested folders. Optional `--type`, `--tag`, and `--json`. |
 | `search` | Case-insensitive keyword search. A title hit ranks above a body-only hit. |
 | `open` | Open a note with the platform handler. |
 | `summarize` | Local heuristic summary. `--write` updates `## Summary` and keeps the rest of the note. |
@@ -47,7 +47,7 @@ derived/   rebuildable indexes and extraction output (not canonical)
 | `lint` | Same structural checks as `check`, plus warnings for orphan notes and missing summaries. |
 | `review` | List, show, approve, or reject `review` extracts. Approval is the only way those extracts become notes. |
 
-`index.md` and `log.md` are not listed as notes. Notes in subfolders of `wiki/` are not included by the current lister.
+`wiki/index.md` and `wiki/log.md` are not listed as notes. Notes in subfolders are included by `list`, `search`, `open`, `query`, `check`, `lint`, and `link`. Initialize a knowledge workspace outside this framework checkout. `init` exits 2 if you point it at the package source tree, unless you pass `--allow-framework-root`.
 
 ### Ingest
 

@@ -88,7 +88,7 @@ OCR stays off unless both flags are present. `--ocr` alone exits 2. If the packa
 
 The flow is: copy into `raw/`, detect the file, OCR images and textless PDFs locally, normalize the text, then run the same Unicode quality gate. `clean` becomes a note. `review` stays in `derived/extraction/text/` until `llm-wiki review approve`. Short or noisy OCR text is not auto-promoted. Ingest has no `--auto-approve-review` flag.
 
-Scanned PDFs are rendered in memory or a temporary file with PyMuPDF and recognized page by page. The extract keeps `## Page N` headings. Poppler is not required. DOCX and PPTX files with no text layer are still `ocr_needed`.
+Scanned PDFs are rendered in memory or a temporary file with PyMuPDF and recognized page by page. The extract keeps `## Page N` headings. Poppler is not required. Text-based DOCX and PPTX extraction still works. Image-only DOCX and PPTX stay `ocr_needed`; OCR for those Office files is not included.
 
 The first run can download model weights, so setup may use the network. After those weights are cached, OCR can run offline. The document or image is not sent to an OCR API. Manifests may name the provider (`paddleocr`) and the page count. They do not store cache directories, usernames, or absolute paths.
 

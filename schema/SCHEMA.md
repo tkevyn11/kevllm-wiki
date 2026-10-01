@@ -55,13 +55,13 @@ Optional:
 
 ## Phase 1 Constraints
 
-- Markdown in `wiki/` is canonical source of truth.
+- Markdown in `wiki/` is canonical source of truth. Notes may live in nested folders. `list`, `search`, `open`, `query`, `check`, `lint`, and `link` use the same recursive note set. `wiki/index.md` and `wiki/log.md` are not notes.
 - No database is required.
 - No vector search, pgvector, knowledge graph, or agent memory in Phase 1 **core** implementation.
 
 ## Optional derived graph (Graphify)
 
-Graphify (external tool + Codex skill under `.agents/skills/graphify/`) may produce a **rebuildable** knowledge graph under **`work/graphify-out/`** when the agent runs the pipeline from **`work/`**. The long-term home for that class of output is **`derived/`**. Until the skill is moved, `work/graphify-out/` stays non-canonical transient output.
+Graphify (external tool + Codex skill under `.agents/skills/graphify/`) may produce a **rebuildable** knowledge graph under **`derived/graphify/`**. That output is non-canonical. Run it from the library root. Do not treat `work/graphify-out/` as the target.
 
 - **Non-authoritative:** `graph.json`, `GRAPH_REPORT.md`, HTML exports, and any Graphify `wiki/` subtree are **not** canonical. They are for navigation, relationship discovery, and suggested questions.
 - **Citations:** Factual claims in project notes still cite `raw/` and curated `wiki/` pages per the rules above.

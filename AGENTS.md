@@ -10,7 +10,7 @@ Wiki maintenance rules live in **`schema/CLAUDE.md`** and **`schema/SCHEMA.md`**
 - Canonical notes live in **`wiki/`** (markdown + frontmatter). After wiki changes, update **`wiki/index.md`** and append **`wiki/log.md`**.
 - **`work/`** is transient. **`derived/`** is rebuildable. Neither is a source of truth.
 - Do not commit secrets, `.env` files, or a user's real `raw/`, `wiki/`, `work/`, or `derived/` content. See **`docs/PRIVACY.md`**.
-- **Graphify** outputs are **derived only** (navigation, structure, questions). The skill currently writes `work/graphify-out/`. Do not treat that, or anything under `derived/`, as a source of truth for factual claims; cite **`raw/`** and wiki notes instead.
+- **Graphify** outputs are **derived only** (navigation, structure, questions). The skill writes `derived/graphify/`. Do not treat that as a source of truth for factual claims; cite **`raw/`** and wiki notes instead.
 
 ## CLI
 
@@ -27,7 +27,7 @@ Coding discipline (think first, minimal code, surgical diffs, verify goals) live
 
 - Install package: `pip install graphifyy` or `pip install -e ".[graphify]"`.
 - In Codex, invoke the repo skill explicitly: **`$graphify`** (implicit invocation is disabled for this project).
-- Run pipeline steps from **`work/`** so outputs land in **`work/graphify-out/`**; use input paths `../raw` and/or `../wiki` relative to `work/`. Those outputs stay non-canonical. The documented long-term directory for rebuildable indexes is **`derived/`**; the skill has not been moved there.
+- Run pipeline steps from the library root so outputs land in **`derived/graphify/`**. Use input paths `raw/` and/or `wiki/`. Those outputs stay non-canonical.
 
 ## Superpowers (recommended)
 

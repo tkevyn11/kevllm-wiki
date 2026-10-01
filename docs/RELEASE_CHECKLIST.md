@@ -13,10 +13,14 @@ Ship a stable `v0.1.0` baseline for Phase 1 with reproducible checks, clear vers
   - `docs/PRD.md`
 - Run test suite:
   - `pytest -q`
-- Run basic CLI smoke flow:
-  - `llm-wiki init -C .`
-  - `llm-wiki list -C .`
-  - `llm-wiki check -C .`
+- Run basic CLI smoke flow in a temporary directory outside this checkout. Do not initialize the framework repository as a knowledge base.
+  - `llm-wiki init -C temporary-directory`
+  - `llm-wiki ingest sample.md -C temporary-directory --extract`
+  - `llm-wiki list -C temporary-directory`
+  - `llm-wiki search "sample" -C temporary-directory`
+  - `llm-wiki check -C temporary-directory`
+  - `llm-wiki lint -C temporary-directory`
+  - `llm-wiki review list -C temporary-directory`
 
 ## Version Bump Guidance
 

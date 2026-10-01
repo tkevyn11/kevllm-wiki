@@ -28,10 +28,12 @@ from .core import (
     append_log,
     ensure_structure,
     fail,
+    is_framework_checkout,
     library_root,
     maybe_read_text,
     now_iso,
     read_note,
+    relative_posix,
     resolve_note,
     slugify,
     wiki_files,
@@ -39,8 +41,14 @@ from .core import (
 )
 
 
-def cmd_init(library: str | None = None) -> None:
+def cmd_init(library: str | None = None, allow_framework_root: bool = False) -> None:
     root = library_root(library)
+    if is_framework_checkout(root) and not allow_framework_root:
+        fail(
+            "Refusing to initialize a user workspace inside the kevllm-wiki framework checkout.\n"
+            "Choose a separate directory.",
+            EXIT_ARGS,
+        )
     ensure_structure(root)
     typer.echo(f"Initialized library at {root}")
 
@@ -61,7 +69,7 @@ def cmd_list(library: str | None = None, note_type: str | None = None, tag: str 
                 "title": str(note.fm.get("title", path.stem)),
                 "type": str(note.fm.get("type", "")),
                 "updated": str(note.fm.get("updated", "")),
-                "path": str(path.relative_to(root)),
+                "path": relative_posix(root, path),
             }
         )
     if as_json:
@@ -364,7 +372,7 @@ def cmd_search(query: str, library: str | None = None, limit: int = 10, as_json:
             {
                 "id": n.fm.get("id", wf.stem),
                 "title": title or wf.stem,
-                "path": str(wf.relative_to(root)),
+                "path": relative_posix(root, wf),
                 "score": score,
                 "snippet": snippet,
             }
@@ -396,7 +404,7 @@ def cmd_open(id_or_path: str, library: str | None = None) -> None:
             subprocess.run(["xdg-open", str(p)], check=False)
         except FileNotFoundError:
             webbrowser.open(p.as_uri())
-    typer.echo(f"Opened {p}")
+    typer.echo(f"Opened {relative_posix(root, p)}")
 
 
 def cmd_summarize(id_or_path: str, library: str | None = None, mode: str = "local", write: bool = False) -> None:
@@ -422,7 +430,7 @@ def cmd_summarize(id_or_path: str, library: str | None = None, mode: str = "loca
         write_note(note)
         _update_index(root, str(note.fm.get("id", note.path.stem)), str(note.fm.get("title", note.path.stem)), summary)
         append_log(root, "summarize", f"{note.fm.get('id', note.path.stem)} updated summary")
-        typer.echo(f"Updated note summary: {note.path.relative_to(root)}")
+        typer.echo(f"Updated note summary: {relative_posix(root, note.path)}")
 
 
 def cmd_query(question: str, library: str | None = None, top_k: int = 5, save: bool = False) -> None:
@@ -449,7 +457,7 @@ def cmd_query(question: str, library: str | None = None, top_k: int = 5, save: b
     for _, note in top:
         summ = _extract_summary_section(note.body) or _summarize_text(str(note.fm.get("title", "")), note.body)
         snippets.append(f"- **{note.fm.get('title', note.path.stem)}**: {summ}")
-        citations.append(f"- [{note.fm.get('id', note.path.stem)}]({note.path.relative_to(root)})")
+        citations.append(f"- [{note.fm.get('id', note.path.stem)}]({relative_posix(root, note.path)})")
     typer.echo(f"# Query\n\nQuestion: {question}\n")
     typer.echo("## Answer\n")
     typer.echo("\n".join(snippets))
@@ -465,14 +473,14 @@ def cmd_query(question: str, library: str | None = None, top_k: int = 5, save: b
             "type": "query",
             "created": ts,
             "updated": ts,
-            "sources": [{"ref": str(n.path.relative_to(root)), "kind": "file", "ingested_at": ts} for _, n in top],
+            "sources": [{"ref": relative_posix(root, n.path), "kind": "file", "ingested_at": ts} for _, n in top],
             "related": [str(n.fm.get("id", n.path.stem)) for _, n in top],
         }
         body = f"# Query: {question}\n\n## Answer\n\n" + "\n".join(snippets) + "\n\n## Sources\n\n" + "\n".join(citations) + "\n"
         write_note(Note(path=path, fm=fm, body=body))
         _update_index(root, qid, fm["title"], f"Synthesized answer from {len(top)} notes.")
         append_log(root, "query", f"{question} -> {qid}")
-        typer.echo(f"\nSaved query note: {path.relative_to(root)}")
+        typer.echo(f"\nSaved query note: {relative_posix(root, path)}")
 
 
 def cmd_link(from_id: str, to_id: str, library: str | None = None, relation: str = "related", bidirectional: bool = True) -> None:
@@ -539,23 +547,35 @@ def cmd_lint(library: str | None = None, strict: bool = False) -> None:
         typer.echo("No lint warnings.")
 
 
+def _note_label(root: Path, path: Path) -> str:
+    """Filename for top-level notes; wiki-relative path when the note is nested."""
+    try:
+        relative = path.resolve().relative_to((root / WIKI_DIR).resolve()).as_posix()
+    except ValueError:
+        return path.name
+    if "/" not in relative:
+        return path.name
+    return relative
+
+
 def _collect_structural_errors(root: Path, notes: list[Note], strict: bool) -> list[str]:
     errors: list[str] = []
     id_to_path: dict[str, Path] = {}
     for n in notes:
         missing = sorted(list(REQ_FIELDS - set(n.fm.keys())))
+        label = _note_label(root, n.path)
         if missing:
-            errors.append(f"{n.path.name}: missing fields {missing}")
+            errors.append(f"{label}: missing fields {missing}")
         nid = str(n.fm.get("id", ""))
         if nid:
             if nid in id_to_path:
-                errors.append(f"duplicate id: {nid} in {n.path.name} and {id_to_path[nid].name}")
+                errors.append(f"duplicate id: {nid} in {label} and {_note_label(root, id_to_path[nid])}")
             id_to_path[nid] = n.path
     for n in notes:
         related = n.fm.get("related", []) or []
         for rid in related:
             if str(rid) not in id_to_path:
-                errors.append(f"{n.path.name}: related id not found -> {rid}")
+                errors.append(f"{_note_label(root, n.path)}: related id not found -> {rid}")
         for m in LINK_PATTERN.finditer(n.body):
             target = m.group(1).split("#")[0]
             if target.startswith(("http://", "https://", "mailto:")) or target == "":
@@ -563,11 +583,11 @@ def _collect_structural_errors(root: Path, notes: list[Note], strict: bool) -> l
             rel_path = (n.path.parent / target).resolve()
             root_path = (root / target).resolve()
             if not rel_path.exists() and not root_path.exists():
-                errors.append(f"{n.path.name}: broken link -> {target}")
+                errors.append(f"{_note_label(root, n.path)}: broken link -> {target}")
     if strict:
         for n in notes:
             if not isinstance(n.fm.get("sources"), list):
-                errors.append(f"{n.path.name}: sources must be a list")
+                errors.append(f"{_note_label(root, n.path)}: sources must be a list")
     return errors
 
 

@@ -12,9 +12,14 @@ app.add_typer(review_app, name="review")
 @app.command()
 def init(
     library: str | None = typer.Option(None, "--library", "-C", help="Library root path."),
+    allow_framework_root: bool = typer.Option(
+        False,
+        "--allow-framework-root",
+        help="Allow init inside this package source checkout.",
+    ),
 ) -> None:
     """Initialize library folders and starter files."""
-    commands.cmd_init(library=library)
+    commands.cmd_init(library=library, allow_framework_root=allow_framework_root)
 
 
 @app.command("list")

@@ -29,7 +29,7 @@ Initialize a library structure.
 
 ### Usage
 
-`llm-wiki init [--library PATH]`
+`llm-wiki init [--library PATH] [--allow-framework-root]`
 
 ### Behavior
 
@@ -40,6 +40,7 @@ Initialize a library structure.
   - `schema/SCHEMA.md`
   - `schema/CLAUDE.md`
 - Running `init` again does not overwrite existing starter content.
+- If the target is this package source checkout (`pyproject.toml` naming `llm-wiki` and `src/llm_wiki/cli.py`), `init` exits `2` and does not create a library there. A generic `pyproject.toml` is not enough to trigger that refusal. `--allow-framework-root` is the maintainer override.
 - Does not create `derived/`.
 
 ## Command: `ingest`
@@ -105,8 +106,8 @@ List notes in the wiki.
 
 ### Behavior
 
-- Reads top-level `wiki/*.md`, excluding `index.md` and `log.md`.
-- Does not descend into subfolders.
+- Reads `wiki/**/*.md`, excluding `wiki/index.md` and `wiki/log.md`.
+- Nested folders stay where they are. `--json` paths are workspace-relative and use forward slashes.
 - Prints `id`, `type`, `updated`, and `title`. `--json` emits those fields plus `path`.
 - `--type` keeps notes whose `type` is an exact match.
 - `--tag` keeps notes whose `tags` list contains that tag.
@@ -122,7 +123,7 @@ Keyword search across note metadata and content.
 
 ### Behavior
 
-- Uses the same top-level note set as `list`.
+- Uses the same nested note set as `list`.
 - Matches a case-insensitive substring of title, dumped frontmatter, and body.
 - Score is `5` when the substring is in the title, plus the number of occurrences in the combined text. Higher scores are listed first.
 - Prints `No matches.` and exits `0` when nothing matches.
