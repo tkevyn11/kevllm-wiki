@@ -16,7 +16,8 @@ LLM maintainer rules are provided via `CLAUDE.md` (root) and `schema/CLAUDE.md`.
 
 ## Current Stage
 
-- Package version: `0.2.0` (release candidate on `feat/generic-framework-v0.2`; not tagged).
+- Package version: `0.2.0`.
+- License: MIT
 - The base CLI, quality-gated extraction, optional local OCR, review promotion, and nested notes are implemented.
 - Progress and the candidate notes are in [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/RELEASE_NOTES_v0.2.0.md](docs/RELEASE_NOTES_v0.2.0.md).
 

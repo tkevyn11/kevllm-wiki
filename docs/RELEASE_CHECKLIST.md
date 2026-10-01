@@ -41,7 +41,7 @@ Bump rules after this candidate:
 
 ## Not in this version
 
-Image-only DOCX/PPTX OCR, MCP, vector or semantic search, GBrain, Semantica, a review UI, and cloud storage. No license file is in the repository yet.
+Image-only DOCX/PPTX OCR, MCP, vector or semantic search, GBrain, Semantica, a review UI, and cloud storage. License: MIT.
 
 ## Tag and publish
 

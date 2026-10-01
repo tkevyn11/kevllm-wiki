@@ -1,6 +1,10 @@
 # Release Notes: v0.2.0
 
-Release candidate. This note describes the `feat/generic-framework-v0.2` tree. It is not a Git tag and it is not a PyPI release.
+kevllm-wiki v0.2.0 is a local-first generic LLM-Wiki framework.
+
+License: MIT
+
+This GitHub release does not publish the package to PyPI.
 
 ## Version
 
@@ -24,7 +28,6 @@ Release candidate. This note describes the `feat/generic-framework-v0.2` tree. I
 - MCP servers, vector or semantic search, and GBrain or Semantica integration.
 - A web or terminal UI for review.
 - Cloud storage or a hosted knowledge service.
-- A chosen license. The repository does not include one yet.
 
 ## Install check
 

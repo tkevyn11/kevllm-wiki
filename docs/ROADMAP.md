@@ -8,9 +8,9 @@ Phase 1 is intentionally narrow: deliver a robust local CLI workflow around mark
 
 ## Current Status
 
-- **Current stage**: `0.2.0` release candidate on `feat/generic-framework-v0.2`. Not merged and not tagged.
+- **Current stage**: kevllm-wiki v0.2.0. License: MIT.
 - **Milestones completed**: Phase 1 milestones 1 through 6, plus the v0.2 framework work below.
-- **Next stage**: owner review, then the pull request, merge, and tag. That step is separate from this candidate.
+- **Next stage**: optional later work only. Phase 2 is not part of v0.2.0.
 
 ### Milestone 1: Foundation
 
@@ -58,7 +58,7 @@ Phase 1 is intentionally narrow: deliver a robust local CLI workflow around mark
 
 ## v0.2.0 framework work
 
-Status: implemented on the release-candidate branch. See [RELEASE_NOTES_v0.2.0.md](RELEASE_NOTES_v0.2.0.md).
+Status: included in v0.2.0. See [RELEASE_NOTES_v0.2.0.md](RELEASE_NOTES_v0.2.0.md).
 
 - Quality-gated `ingest --extract` for text, Markdown, PDF, DOCX, and PPTX.
 - Optional local OCR for images and scanned PDFs (`ingest --extract --ocr`).
