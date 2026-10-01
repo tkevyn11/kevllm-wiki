@@ -42,7 +42,7 @@ When planning Phase 2, consider evaluating third-party tools **only as optional 
 Integration principles:
 
 - Phase 1 `wiki/` markdown remains canonical; any graph or extracted structure is derived and rebuildable.
-- Prefer opt-in pipelines and explicit exports (for example into `work/` or a dedicated Phase 2 cache) rather than silent mutation of notes.
+- Prefer opt-in pipelines and explicit exports under `derived/` rather than silent mutation of notes. Graphify's path in this repo is `derived/graphify/`.
 - Compare against lighter options (manual frontmatter, `check`, optional PDF preprocessors) before committing to heavy extraction stacks.
 
 ## Memory Lifecycle Extension (Candidate)

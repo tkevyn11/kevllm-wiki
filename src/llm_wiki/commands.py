@@ -28,10 +28,12 @@ from .core import (
     append_log,
     ensure_structure,
     fail,
+    is_framework_checkout,
     library_root,
     maybe_read_text,
     now_iso,
     read_note,
+    relative_posix,
     resolve_note,
     slugify,
     wiki_files,
@@ -39,8 +41,14 @@ from .core import (
 )
 
 
-def cmd_init(library: str | None = None) -> None:
+def cmd_init(library: str | None = None, allow_framework_root: bool = False) -> None:
     root = library_root(library)
+    if is_framework_checkout(root) and not allow_framework_root:
+        fail(
+            "Refusing to initialize a user workspace inside the kevllm-wiki framework checkout.\n"
+            "Choose a separate directory.",
+            EXIT_ARGS,
+        )
     ensure_structure(root)
     typer.echo(f"Initialized library at {root}")
 
@@ -61,7 +69,7 @@ def cmd_list(library: str | None = None, note_type: str | None = None, tag: str 
                 "title": str(note.fm.get("title", path.stem)),
                 "type": str(note.fm.get("type", "")),
                 "updated": str(note.fm.get("updated", "")),
-                "path": str(path.relative_to(root)),
+                "path": relative_posix(root, path),
             }
         )
     if as_json:
@@ -83,12 +91,29 @@ def cmd_ingest(
     summarize: bool = True,
     link_suggestions: bool = False,
     touch_related: bool = False,
+    extract: bool = False,
+    ocr: bool = False,
 ) -> None:
     root = library_root(library)
     ensure_structure(root)
     src = Path(input_path).resolve()
     if not src.exists():
         fail("Input not found.", EXIT_ARGS)
+    if ocr and not extract:
+        fail("`--ocr` requires `--extract`. Use: llm-wiki ingest <source> --extract --ocr", EXIT_ARGS)
+    if extract:
+        _ingest_with_extraction(
+            root=root,
+            src=src,
+            note_type=note_type,
+            title=title,
+            note_id=note_id,
+            summarize=summarize,
+            link_suggestions=link_suggestions,
+            touch_related=touch_related,
+            ocr=_load_ocr(ocr),
+        )
+        return
     files = [p for p in src.rglob("*") if p.is_file()] if src.is_dir() else [src]
     created = 0
     for file_path in files:
@@ -157,6 +182,177 @@ def cmd_ingest(
     typer.echo(f"Ingested {created} file(s).")
 
 
+def _ingest_with_extraction(
+    root: Path,
+    src: Path,
+    note_type: str,
+    title: str | None,
+    note_id: str | None,
+    summarize: bool,
+    link_suggestions: bool,
+    touch_related: bool,
+    ocr: Any | None = None,
+) -> None:
+    """Opt-in quality gate. Legacy ingest does not call this."""
+    from .ingest import extract_sources
+
+    source_root = src if src.is_dir() else src.parent
+    files = [src] if src.is_file() else [path for path in src.rglob("*") if path.is_file()]
+    for file_path in files:
+        relative = file_path.relative_to(source_root)
+        destination = root / RAW_DIR / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(file_path, destination)
+
+    output_dir = root / "derived" / "extraction"
+    payload = extract_sources(src, output_dir, ocr=ocr)
+    events: list[dict[str, Any]] = []
+    failed = False
+    for item in payload["results"]:
+        status = str(item["status"])
+        relative = str(item["relative_path"])
+        raw_relative = f"{RAW_DIR}/{relative}"
+        created_id = ""
+        if status == "clean":
+            created_id = _write_clean_note(
+                root=root,
+                output_dir=output_dir,
+                item=item,
+                raw_relative=raw_relative,
+                note_type=note_type,
+                title=title,
+                note_id=note_id,
+                summarize=summarize,
+                link_suggestions=link_suggestions,
+                touch_related=touch_related,
+            )
+            typer.echo(f"Clean: created note {created_id}")
+        elif status == "review":
+            typer.echo(f"Review: {relative} requires review; no canonical note created")
+        elif status == "ocr_needed":
+            if ocr is None:
+                typer.echo(f"OCR needed: {relative} — OCR is required but not enabled yet")
+            else:
+                typer.echo(f"OCR needed: {relative} — OCR is not supported for this file type yet")
+        elif status == "skip":
+            typer.echo(f"Skipped: {relative}")
+        elif status == "reject":
+            failed = True
+            typer.echo(f"Rejected: {relative} — {item['reason']}")
+        else:
+            failed = True
+            typer.echo(f"Error: {relative} — {item['reason']}")
+        events.append(
+            {
+                "schema_version": 1,
+                "event": "extract",
+                "ingested_at": now_iso(),
+                "source_relative": relative,
+                "raw_relative": raw_relative,
+                "sha256": item["sha256"],
+                "note_id": created_id or None,
+                "extraction_status": status,
+                "ocr_used": bool(item.get("ocr_used")),
+                "ocr_provider": item.get("ocr_provider") or "",
+                "ocr_pages": int(item.get("ocr_pages") or 0),
+            }
+        )
+    event_path = output_dir / "manifests" / "ingest.jsonl"
+    event_path.parent.mkdir(parents=True, exist_ok=True)
+    event_path.write_text(
+        "".join(json.dumps(event, ensure_ascii=False) + "\n" for event in events),
+        encoding="utf-8",
+        newline="\n",
+    )
+    counts = payload["counts"]
+    typer.echo(
+        "Extracted {n} file(s): clean={clean} review={review} ocr_needed={ocr_needed} "
+        "skip={skip} reject={reject} error={error}".format(
+            n=len(payload["results"]),
+            clean=counts.get("clean", 0),
+            review=counts.get("review", 0),
+            ocr_needed=counts.get("ocr_needed", 0),
+            skip=counts.get("skip", 0),
+            reject=counts.get("reject", 0),
+            error=counts.get("error", 0),
+        )
+    )
+    if failed:
+        raise typer.Exit(EXIT_VALIDATION)
+
+
+def _write_clean_note(
+    root: Path,
+    output_dir: Path,
+    item: dict[str, Any],
+    raw_relative: str,
+    note_type: str,
+    title: str | None,
+    note_id: str | None,
+    summarize: bool,
+    link_suggestions: bool,
+    touch_related: bool,
+) -> str:
+    relative = Path(str(item["relative_path"]))
+    base = note_id or slugify(relative.stem)
+    candidate_id = base or "untitled"
+    index = 2
+    while (root / WIKI_DIR / f"{candidate_id}.md").exists():
+        candidate_id = f"{base or 'untitled'}-{index}"
+        index += 1
+    extracted = ""
+    output_relative = str(item.get("output_relative_path") or "")
+    if output_relative:
+        extracted = (output_dir / output_relative).read_text(encoding="utf-8")
+    ts = now_iso()
+    note_title = title or relative.stem.replace("_", " ").title()
+    summary = _summarize_text(note_title, extracted) if summarize else ""
+    fm: dict[str, Any] = {
+        "id": candidate_id,
+        "title": note_title,
+        "type": note_type,
+        "created": ts,
+        "updated": ts,
+        "sources": [{"ref": raw_relative, "kind": "file", "ingested_at": ts}],
+        "related": [],
+        "source_file": raw_relative,
+        "source_sha256": item["sha256"],
+        "extraction_status": "clean",
+    }
+    if item.get("ocr_used"):
+        fm["ocr_used"] = True
+        fm["ocr_provider"] = item.get("ocr_provider") or ""
+        fm["ocr_pages"] = int(item.get("ocr_pages") or 0)
+    body = f"# {note_title}\n\n"
+    if summarize:
+        body += f"## Summary\n\n{summary}\n\n"
+    body += f"## Source\n\n- `{raw_relative}`\n\n{extracted.strip()}\n"
+    note_path = root / WIKI_DIR / f"{candidate_id}.md"
+    write_note(Note(path=note_path, fm=fm, body=body))
+    _update_index(root, candidate_id, note_title, summary or "Ingested source note.")
+    if link_suggestions:
+        linked_ids = _auto_link_suggestions(root, candidate_id, note_title, extracted)
+        if linked_ids:
+            append_log(root, "link-suggest", f"{candidate_id} -> {', '.join(linked_ids)}")
+            if touch_related:
+                touched = _touch_related_notes(root, linked_ids)
+                if touched:
+                    append_log(root, "touch-related", f"{candidate_id} refreshed {', '.join(touched)}")
+    append_log(root, "extract", f"{relative.as_posix()} -> {candidate_id}")
+    return candidate_id
+
+
+def _load_ocr(enabled: bool) -> Any | None:
+    if not enabled:
+        return None
+    from .ingest.ocr import OcrDependencyError, load_paddle_provider
+
+    try:
+        return load_paddle_provider()
+    except OcrDependencyError as exc:
+        fail(str(exc), EXIT_ARGS)
+
+
 def cmd_search(query: str, library: str | None = None, limit: int = 10, as_json: bool = False) -> None:
     root = library_root(library)
     q = query.lower()
@@ -176,7 +372,7 @@ def cmd_search(query: str, library: str | None = None, limit: int = 10, as_json:
             {
                 "id": n.fm.get("id", wf.stem),
                 "title": title or wf.stem,
-                "path": str(wf.relative_to(root)),
+                "path": relative_posix(root, wf),
                 "score": score,
                 "snippet": snippet,
             }
@@ -208,7 +404,7 @@ def cmd_open(id_or_path: str, library: str | None = None) -> None:
             subprocess.run(["xdg-open", str(p)], check=False)
         except FileNotFoundError:
             webbrowser.open(p.as_uri())
-    typer.echo(f"Opened {p}")
+    typer.echo(f"Opened {relative_posix(root, p)}")
 
 
 def cmd_summarize(id_or_path: str, library: str | None = None, mode: str = "local", write: bool = False) -> None:
@@ -234,7 +430,7 @@ def cmd_summarize(id_or_path: str, library: str | None = None, mode: str = "loca
         write_note(note)
         _update_index(root, str(note.fm.get("id", note.path.stem)), str(note.fm.get("title", note.path.stem)), summary)
         append_log(root, "summarize", f"{note.fm.get('id', note.path.stem)} updated summary")
-        typer.echo(f"Updated note summary: {note.path.relative_to(root)}")
+        typer.echo(f"Updated note summary: {relative_posix(root, note.path)}")
 
 
 def cmd_query(question: str, library: str | None = None, top_k: int = 5, save: bool = False) -> None:
@@ -261,7 +457,7 @@ def cmd_query(question: str, library: str | None = None, top_k: int = 5, save: b
     for _, note in top:
         summ = _extract_summary_section(note.body) or _summarize_text(str(note.fm.get("title", "")), note.body)
         snippets.append(f"- **{note.fm.get('title', note.path.stem)}**: {summ}")
-        citations.append(f"- [{note.fm.get('id', note.path.stem)}]({note.path.relative_to(root)})")
+        citations.append(f"- [{note.fm.get('id', note.path.stem)}]({relative_posix(root, note.path)})")
     typer.echo(f"# Query\n\nQuestion: {question}\n")
     typer.echo("## Answer\n")
     typer.echo("\n".join(snippets))
@@ -277,14 +473,14 @@ def cmd_query(question: str, library: str | None = None, top_k: int = 5, save: b
             "type": "query",
             "created": ts,
             "updated": ts,
-            "sources": [{"ref": str(n.path.relative_to(root)), "kind": "file", "ingested_at": ts} for _, n in top],
+            "sources": [{"ref": relative_posix(root, n.path), "kind": "file", "ingested_at": ts} for _, n in top],
             "related": [str(n.fm.get("id", n.path.stem)) for _, n in top],
         }
         body = f"# Query: {question}\n\n## Answer\n\n" + "\n".join(snippets) + "\n\n## Sources\n\n" + "\n".join(citations) + "\n"
         write_note(Note(path=path, fm=fm, body=body))
         _update_index(root, qid, fm["title"], f"Synthesized answer from {len(top)} notes.")
         append_log(root, "query", f"{question} -> {qid}")
-        typer.echo(f"\nSaved query note: {path.relative_to(root)}")
+        typer.echo(f"\nSaved query note: {relative_posix(root, path)}")
 
 
 def cmd_link(from_id: str, to_id: str, library: str | None = None, relation: str = "related", bidirectional: bool = True) -> None:
@@ -351,23 +547,35 @@ def cmd_lint(library: str | None = None, strict: bool = False) -> None:
         typer.echo("No lint warnings.")
 
 
+def _note_label(root: Path, path: Path) -> str:
+    """Filename for top-level notes; wiki-relative path when the note is nested."""
+    try:
+        relative = path.resolve().relative_to((root / WIKI_DIR).resolve()).as_posix()
+    except ValueError:
+        return path.name
+    if "/" not in relative:
+        return path.name
+    return relative
+
+
 def _collect_structural_errors(root: Path, notes: list[Note], strict: bool) -> list[str]:
     errors: list[str] = []
     id_to_path: dict[str, Path] = {}
     for n in notes:
         missing = sorted(list(REQ_FIELDS - set(n.fm.keys())))
+        label = _note_label(root, n.path)
         if missing:
-            errors.append(f"{n.path.name}: missing fields {missing}")
+            errors.append(f"{label}: missing fields {missing}")
         nid = str(n.fm.get("id", ""))
         if nid:
             if nid in id_to_path:
-                errors.append(f"duplicate id: {nid} in {n.path.name} and {id_to_path[nid].name}")
+                errors.append(f"duplicate id: {nid} in {label} and {_note_label(root, id_to_path[nid])}")
             id_to_path[nid] = n.path
     for n in notes:
         related = n.fm.get("related", []) or []
         for rid in related:
             if str(rid) not in id_to_path:
-                errors.append(f"{n.path.name}: related id not found -> {rid}")
+                errors.append(f"{_note_label(root, n.path)}: related id not found -> {rid}")
         for m in LINK_PATTERN.finditer(n.body):
             target = m.group(1).split("#")[0]
             if target.startswith(("http://", "https://", "mailto:")) or target == "":
@@ -375,11 +583,11 @@ def _collect_structural_errors(root: Path, notes: list[Note], strict: bool) -> l
             rel_path = (n.path.parent / target).resolve()
             root_path = (root / target).resolve()
             if not rel_path.exists() and not root_path.exists():
-                errors.append(f"{n.path.name}: broken link -> {target}")
+                errors.append(f"{_note_label(root, n.path)}: broken link -> {target}")
     if strict:
         for n in notes:
             if not isinstance(n.fm.get("sources"), list):
-                errors.append(f"{n.path.name}: sources must be a list")
+                errors.append(f"{_note_label(root, n.path)}: sources must be a list")
     return errors
 
 
@@ -511,6 +719,78 @@ def _auto_link_suggestions(root: Path, note_id: str, title: str, extracted: str)
 def _keyword_terms(text: str) -> list[str]:
     stop = {"the", "and", "with", "from", "that", "this", "were", "have", "has", "for", "into", "note", "source", "case"}
     return [t for t in re.findall(r"[a-z0-9]+", (text or "").lower()) if len(t) >= 4 and t not in stop]
+
+
+def cmd_review_list(library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, pending_review_items
+
+    root = library_root(library)
+    try:
+        items = pending_review_items(root)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    if not items:
+        typer.echo("No pending review items.")
+        return
+    for item in items:
+        ocr = "yes" if item.ocr_used else "no"
+        typer.echo(
+            f"{item.review_id}  source={item.source_relative}  type={item.file_type}  "
+            f"chars={item.text_chars}  at={item.created_at}  ocr={ocr}"
+        )
+
+
+def cmd_review_show(item: str, library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, show_review_item
+
+    root = library_root(library)
+    try:
+        found, text = show_review_item(root, item)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    lines = [
+        f"review_id: {found.review_id}",
+        f"source_relative: {found.source_relative}",
+        f"status: {found.status}",
+        f"file_type: {found.file_type}",
+        f"text_chars: {found.text_chars}",
+        f"sha256: {found.sha256}",
+        f"ocr_used: {'true' if found.ocr_used else 'false'}",
+    ]
+    if found.ocr_used:
+        lines.append(f"ocr_provider: {found.ocr_provider}")
+        lines.append(f"ocr_pages: {found.ocr_pages}")
+    typer.echo("\n".join(lines))
+    typer.echo("")
+    typer.echo(text.rstrip())
+
+
+def cmd_review_approve(item: str, library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, approve_review_item
+
+    root = library_root(library)
+    try:
+        note_id, outcome = approve_review_item(root, item)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    if outcome == "already":
+        typer.echo(f"Already approved: {item}")
+        return
+    typer.echo(f"Approved: created note {note_id}")
+
+
+def cmd_review_reject(item: str, library: str | None = None) -> None:
+    from .ingest.review import ReviewFailure, reject_review_item
+
+    root = library_root(library)
+    try:
+        outcome = reject_review_item(root, item)
+    except ReviewFailure as exc:
+        fail(exc.message, exc.code)
+    if outcome == "already":
+        typer.echo(f"Already rejected: {item}")
+        return
+    typer.echo(f"Rejected: {item}")
 
 
 def _touch_related_notes(root: Path, related_ids: list[str]) -> list[str]:

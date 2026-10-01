@@ -2,14 +2,24 @@ import typer
 from . import commands
 
 app = typer.Typer(help="Local-first markdown wiki CLI.")
+review_app = typer.Typer(
+    help="List, show, approve, or reject extracts waiting for review.",
+    no_args_is_help=True,
+)
+app.add_typer(review_app, name="review")
 
 
 @app.command()
 def init(
     library: str | None = typer.Option(None, "--library", "-C", help="Library root path."),
+    allow_framework_root: bool = typer.Option(
+        False,
+        "--allow-framework-root",
+        help="Allow init inside this package source checkout.",
+    ),
 ) -> None:
     """Initialize library folders and starter files."""
-    commands.cmd_init(library=library)
+    commands.cmd_init(library=library, allow_framework_root=allow_framework_root)
 
 
 @app.command("list")
@@ -33,6 +43,8 @@ def ingest(
     summarize: bool = typer.Option(True, "--summarize/--no-summarize"),
     link_suggestions: bool = typer.Option(False, "--link-suggestions"),
     touch_related: bool = typer.Option(False, "--touch-related"),
+    extract: bool = typer.Option(False, "--extract", help="Quality-gated path. Only clean extracts become notes."),
+    ocr: bool = typer.Option(False, "--ocr", help="Local OCR for images and scanned PDFs. Requires --extract."),
 ) -> None:
     """Ingest local files into raw and create notes."""
     commands.cmd_ingest(
@@ -44,7 +56,44 @@ def ingest(
         summarize=summarize,
         link_suggestions=link_suggestions,
         touch_related=touch_related,
+        extract=extract,
+        ocr=ocr,
     )
+
+
+@review_app.command("list")
+def review_list(
+    library: str | None = typer.Option(None, "--library", "-C"),
+) -> None:
+    """List extracts that are waiting for a decision."""
+    commands.cmd_review_list(library=library)
+
+
+@review_app.command("show")
+def review_show(
+    item: str = typer.Argument(..., help="Review id from `review list`."),
+    library: str | None = typer.Option(None, "--library", "-C"),
+) -> None:
+    """Show one review item without changing it."""
+    commands.cmd_review_show(item=item, library=library)
+
+
+@review_app.command("approve")
+def review_approve(
+    item: str = typer.Argument(..., help="Review id to promote into wiki/."),
+    library: str | None = typer.Option(None, "--library", "-C"),
+) -> None:
+    """Promote one reviewed extract into a canonical note."""
+    commands.cmd_review_approve(item=item, library=library)
+
+
+@review_app.command("reject")
+def review_reject(
+    item: str = typer.Argument(..., help="Review id to keep out of wiki/."),
+    library: str | None = typer.Option(None, "--library", "-C"),
+) -> None:
+    """Record a rejection and leave wiki/ unchanged."""
+    commands.cmd_review_reject(item=item, library=library)
 
 
 @app.command()

@@ -14,27 +14,29 @@ flowchart LR
   user[User]
   cli[llm_wiki_CLI]
   raw[raw_dir]
-  schema[schema_dir]
-  work[work_dir]
   wiki[wiki_dir]
-  llm[Optional_LLM]
+  work[work_dir]
+  derived[derived_dir]
   user --> cli
   cli --> raw
-  cli --> schema
-  cli --> work
   cli --> wiki
-  cli -.->|"optional_summarize"| llm
+  cli --> work
+  derived -.->|"rebuildable, not written by core CLI yet"| cli
 ```
 
 ## Storage and Source of Truth
 
 - `wiki/` markdown files are the canonical knowledge base.
-- `raw/` stores original source materials and is not rewritten by processing commands.
-- `schema/` stores workflow conventions and schema-layer rules for the CLI maintainer behavior.
-- `work/` stores temporary processing state and ingest manifests.
+- `raw/` stores copies of source material. It may be private. Ingest does not modify the original file outside the library.
+- `work/` stores transient state. Ingest manifests include absolute local paths.
+- `derived/` is the place for rebuildable graph, vector, semantic, and extraction outputs. Core commands do not write it yet. Nothing under `derived/` is canonical.
+- `schema/` stores workflow conventions for maintainers. A user library also gets starter schema files from `init` when they are missing.
 - No database is required for Phase 1 operation.
+- The installed package is three modules: `cli.py`, `commands.py`, and `core.py`.
 
 ## Suggested Module Boundaries
+
+The names below describe responsibilities inside those modules. They are not separate packages.
 
 - `cli/`
   - command definitions and argument parsing
@@ -54,8 +56,8 @@ flowchart LR
 - `check/`
   - consistency checks (schema, duplicate ids, broken links)
 - `summarize/`
-  - local summarization default
-  - optional LLM adapter
+  - local summarization only
+  - any non-local `--mode` exits 2
 
 ## Command-to-Module Mapping
 
@@ -72,7 +74,7 @@ flowchart LR
 
 ## Operational Characteristics
 
-- **Idempotence**: `init` and parts of `ingest` should be safe to re-run.
+- **Idempotence**: `init` is safe to re-run and does not overwrite starter files. Re-running `ingest` on the same filename creates a suffixed raw copy and a new note id. It does not rewrite the existing note.
 - **Determinism**: same inputs produce same note structure where possible.
 - **Transparency**: all artifacts remain user-readable files.
 

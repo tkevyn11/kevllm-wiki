@@ -14,7 +14,8 @@
 
 - **Filesystem**: `pathlib` (standard library)
 - **Metadata parsing**: `PyYAML` for frontmatter blocks
-- **Text processing**: standard library (`re`, `datetime`, `json`, `textwrap`)
+- **Declared readers**: `pypdf` for PDF text and `python-docx` for DOCX text. PPTX slide text in the extraction service uses the standard-library ZIP/XML reader. `python-pptx` is not a dependency.
+- **Text processing**: standard library (`re`, `datetime`, `json`)
 - **Command execution/open behavior**: `os`, `subprocess`, `webbrowser`, platform-specific helpers
 
 ## Search Approach
@@ -38,9 +39,10 @@
 ## Storage Model
 
 - Local filesystem only in Phase 1:
-  - `raw/` for original sources
-  - `wiki/` for structured markdown notes
-  - `work/` for temporary artifacts and ingest manifests
+  - `raw/` for source copies
+  - `wiki/` for canonical markdown notes
+  - `work/` for transient artifacts and ingest manifests
+  - `derived/` for rebuildable extracts (`llm-wiki ingest --extract`) and future indexes
 
 ## External Dependencies Policy
 
@@ -63,3 +65,12 @@
 - **Dataview** (optional query plugin): run local queries against note frontmatter.
 
 These tools are optional and must not become required runtime dependencies for CLI functionality.
+
+## Optional local OCR
+
+Not required for `pip install -e .` or for `llm-wiki ingest`.
+
+- **Extra**: `pip install -e ".[ocr]"` from a checkout, or `pip install "llm-wiki[ocr]"` for the published package. Both install `paddleocr` and `pymupdf`. They do not install PaddlePaddle.
+- **Engine**: PaddlePaddle 3.x is separate. A CPU example is `python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/`.
+- **Use**: `llm-wiki ingest <source> --extract --ocr`. `llm-wiki review approve` is a separate local decision and does not call OCR again.
+- **Scope**: local images and scanned PDFs. No cloud OCR API. Model setup may download weights; source files stay on the machine.

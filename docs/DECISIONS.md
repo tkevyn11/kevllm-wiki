@@ -69,10 +69,10 @@ This file records high-impact decisions for Phase 1 with context and trade-offs.
 ## D-009: Summarization Is Local by Default, LLM Optional
 
 - **Context**: Local-first is a core project goal.
-- **Decision**: Default summarize behavior is deterministic local heuristics; optional LLM integration is opt-in.
+- **Decision**: Default summarize behavior is deterministic local heuristics; optional LLM integration would be opt-in.
 - **Consequences**:
   - Works offline for baseline workflows.
-  - Optional quality improvements available without coupling MVP to cloud.
+  - The frozen CLI rejects every `--mode` other than `local` with exit code 2. No adapter is wired up.
 
 ## D-010: Phase 2 as Additive Intelligence Layer
 

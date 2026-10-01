@@ -66,11 +66,45 @@ def write_note(note: Note) -> None:
     note.path.write_text(content, encoding="utf-8")
 
 
+def relative_posix(root: Path, path: Path) -> str:
+    """Workspace-relative path with forward slashes."""
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
+def is_framework_checkout(root: Path) -> bool:
+    """True only for this package's source tree, not a generic Python project."""
+    pyproject = root / "pyproject.toml"
+    package = root / "src" / "llm_wiki" / "cli.py"
+    if not pyproject.is_file() or not package.is_file():
+        return False
+    try:
+        text = pyproject.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return 'name = "llm-wiki"' in text or "name = 'llm-wiki'" in text
+
+
 def wiki_files(root: Path) -> list[Path]:
+    """Canonical notes under wiki/, including nested folders.
+
+    ``wiki/index.md`` and ``wiki/log.md`` are framework files, not notes.
+    """
     wiki = root / WIKI_DIR
     if not wiki.exists():
         return []
-    return sorted([p for p in wiki.glob("*.md") if p.name not in {INDEX_FILE, LOG_FILE}])
+    managed = {INDEX_FILE, LOG_FILE}
+    found: list[Path] = []
+    for path in wiki.rglob("*.md"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(wiki).as_posix()
+        if relative in managed:
+            continue
+        found.append(path)
+    return sorted(found, key=lambda item: item.relative_to(wiki).as_posix().casefold())
 
 
 def resolve_note(root: Path, id_or_path: str) -> Note | None:

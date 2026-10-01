@@ -1,115 +1,74 @@
-# LLM-Wiki Quickstart (One Page)
+# LLM-Wiki Quickstart
 
-Use this if you want fast copy-paste commands.
+Use a separate folder for your notes. This repository is the framework, not the library.
 
-## 1) Open PowerShell and go to project
+## 1) Install the framework
 
-```powershell
-cd "D:\my LLM-wiki"
+From the framework checkout:
+
+```bash
+python -m venv .venv
 ```
 
-## 2) Check CLI is available
+Activate it (`source .venv/bin/activate`, or `.venv\Scripts\Activate.ps1` on Windows), then:
 
-```powershell
+```bash
+pip install -e ".[dev]"
 llm-wiki --help
 ```
 
-## 3) Initialize library (run once)
+Base use without the dev tools is `pip install -e .`. A published install is `pip install llm-wiki`. Optional local OCR is the `ocr` extra: `pip install -e ".[ocr]"` from this checkout, or `pip install "llm-wiki[ocr]"` for the published package. PaddlePaddle 3.x is a separate engine and is not installed by that extra. OCR is not required for the commands below. See [EXTRACTION.md](EXTRACTION.md).
 
-```powershell
-llm-wiki init -C .
+## 2) Create a workspace
+
+```bash
+mkdir my-knowledge
+cd my-knowledge
+llm-wiki init
 ```
 
-## 4) Ingest your first file
+`init` creates `raw/`, `wiki/`, `work/`, `docs/`, and `schema/`. Running it again does not overwrite starter files you have edited.
 
-```powershell
-llm-wiki ingest "C:\path\to\your\file.md" -C .
-```
+## 3) Ingest a local file
 
-If your files are mostly PDF/DOC/PPT (recommended pattern):
-
-```powershell
-llm-wiki ingest "D:\my LLM-wiki\raw\processed" -C "D:\my LLM-wiki"
-```
-
-Use `raw\original\` for untouched originals and `raw\processed\` for extracted text/markdown.
-
-## 5) See notes
-
-```powershell
+```bash
+llm-wiki ingest path/to/sample-paper.md
 llm-wiki list
+llm-wiki search "distributed systems"
 ```
 
-or with explicit library:
+Ingest copies the file into `raw/` and writes a new note under `wiki/`. Ingesting the same filename again creates a suffixed copy such as `sample-paper-2`, and leaves the first note unchanged.
 
-```powershell
-llm-wiki list -C .
-```
+## 4) Open, summarize, link, check
 
-**Tip:** the library flag is **uppercase `-C`** (or `--library`). `llm-wiki list -c` fails with `No such option: -c`.
-
-## 6) Search notes
-
-```powershell
-llm-wiki search "keyword"
-```
-
-## 7) Open note
-
-Copy the **id** from `llm-wiki list` (one word, often with hyphens). Example:
-
-```powershell
-llm-wiki open acom-aneurysm
-```
-
-Do not type spaces inside the id (`open acom aneurysm` is wrong).
-
-## 8) Summarize note
-
-```powershell
-llm-wiki summarize acom-aneurysm
-```
-
-## 9) Link two notes
-
-```powershell
-llm-wiki link note-a note-b
-```
-
-## 10) Check consistency
-
-```powershell
+```bash
+llm-wiki open project-alpha
+llm-wiki summarize project-alpha --write
+llm-wiki link project-alpha example-research-note
 llm-wiki check
+llm-wiki lint
+llm-wiki query "distributed systems"
 ```
 
-Strict check:
+`open` uses an existing filesystem path before a note id. `summarize` is local only. `query` prints a citation-backed answer from notes already in `wiki/`.
 
-```powershell
-llm-wiki check --strict
+Extracts that the quality gate marks `review` stay out of `wiki/` until you accept them:
+
+```bash
+llm-wiki ingest path/to/short-note.txt --extract
+llm-wiki review list
+llm-wiki review approve <review-id>
 ```
 
-## JSON outputs (optional)
+`llm-wiki review reject <review-id>` records a refusal and does not create a note.
 
-```powershell
-llm-wiki list --json
-llm-wiki search "keyword" --json
-```
-
-## Typical daily sequence
-
-```powershell
-llm-wiki ingest "C:\path\to\new\notes" -C .
-llm-wiki list
-llm-wiki search "topic"
-llm-wiki check
-```
+The library flag is uppercase `-C` / `--library`. `-c` is not accepted.
 
 ## If something fails
 
-- `Input not found` -> file/folder path is wrong
-- `Target not found` -> note id/path not found
-- `Check failed` -> fix metadata or broken links in `wiki/`
-- `No such option: -c` -> use **`-C`**, not `-c`
-- `unexpected extra argument` -> `open`/`summarize` need **one** id; copy from `list`
+- Exit `2` and `Input not found`: the file or folder path is wrong.
+- Exit `2` and `Only local mode is currently implemented`: `summarize --mode` was not `local`.
+- Exit `4` and `Target not found`: the note id or path does not resolve.
+- Exit `3` and `Check failed`: fix frontmatter, duplicate ids, or broken wiki links.
 
-For full beginner manual: [USER_GUIDE.md](USER_GUIDE.md)
+See [USER_GUIDE.md](USER_GUIDE.md), [CLI_SPEC.md](CLI_SPEC.md), and [PRIVACY.md](PRIVACY.md).
