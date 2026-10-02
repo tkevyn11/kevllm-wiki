@@ -18,7 +18,7 @@ def test_version_is_0_2_0() -> None:
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
     assert license_text.startswith("MIT License")
     assert "Copyright (c) 2026 tkevyn11" in license_text
-    assert "License: MIT" in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "**License:** MIT" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert llm_wiki.__version__ == "0.2.0"
     assert project["project"]["scripts"]["llm-wiki"] == "llm_wiki.cli:app"
     assert "paddleocr" not in project["project"]["dependencies"]
